@@ -26,22 +26,27 @@ Ces éléments sont explicitement HORS SCOPE pour la v1 (PROJECT.md §7). Si une
 
 ### Backend (`src-tauri/src/`)
 
-- `commands/` — une commande Tauri par fichier/domaine : scan de dossier, génération/cache de vignettes, détection des moniteurs, création/positionnement de la fenêtre de projection.
-- `state.rs` — état applicatif partagé (`AppState`) sous `Mutex`/`RwLock`, injecté via `tauri::State`.
+- `commands/` — une commande Tauri par fichier/domaine :
+  - `images.rs` — `list_images` (scan non récursif d'un dossier), `get_full_image` (lecture brute d'un fichier, encodée en data URI base64, sans réencodage — qualité originale pour la projection).
+  - `thumbnails.rs` — `get_thumbnail` : génère une miniature (`image` crate, 200px max), mise en cache sur disque (app cache dir) avec une clé dérivée du chemin + mtime + taille, retournée en data URI base64.
+  - `monitors.rs` — `list_monitors` (détection via `tauri::Monitor`), `open_projection_window` (crée ou repositionne la fenêtre `projection` : sans décorations, non redimensionnable, taille/position = le moniteur choisi).
+  - `projection.rs` — `set_current_image`, `toggle_blackout`, `get_projection_state` : lisent/écrivent `AppState` et émettent l'événement `projection-changed` vers toutes les fenêtres à chaque changement.
+- `state.rs` — `AppState { current_image, is_blackout }` sous `Mutex`, injecté via `tauri::State`.
+- `imaging.rs` — utilitaires partagés (détection MIME par extension, encodage en data URI), réutilisés par `images.rs` et `thumbnails.rs`.
 - `main.rs` / `lib.rs` — uniquement le bootstrap (builder Tauri, enregistrement des commandes/plugins). Aucune logique métier ici.
-- Erreurs : type d'erreur sérialisable (`serde::Serialize`) renvoyé en `Result<T, AppError>` depuis les commandes. Pas de `unwrap()`/`expect()` en dehors des tests.
-- Vignettes : générées via la crate `image`, mises en cache sur disque (app cache dir) avec une clé dérivée du chemin + mtime + taille, pour ne jamais régénérer inutilement sur un dossier déjà vu.
+- Erreurs : `AppError` sérialisable (`serde::Serialize`), renvoyé en `Result<T, AppError>` depuis les commandes. Pas de `unwrap()`/`expect()` en dehors des tests.
 
 ### Frontend (`src/`)
 
-- `routes/+page.svelte` — composition root de la fenêtre de contrôle (unique page de l'app). N'assemble que les composants de `lib/components/`, pas de logique métier inline.
-- `lib/components/` — `ControlBar.svelte` (choix dossier + écran), `ThumbnailList.svelte` (liste verticale scrollable), `ProjectionView.svelte` (rendu plein écran, fond noir par défaut, `object-fit: contain`).
-- `lib/stores/` — stores Svelte : liste des images, image courante projetée, liste des moniteurs, moniteur choisi. Pas de librairie de state management externe, les stores natifs suffisent.
-- IPC : `invoke()` pour toute opération système/fs (scan dossier, thumbnails, moniteurs, gestion fenêtre). `emit`/`listen` réservés à la synchronisation fenêtre de contrôle → fenêtre de projection (changement d'image, blackout).
+- `routes/+page.svelte` — composition root unique. Branch au runtime sur `getCurrentWindow().label` : `"projection"` → `ProjectionView`, sinon → `ControlBar` + `ThumbnailList` + `KeyboardShortcuts`. Une seule fenêtre "control", une seule fenêtre "projection", pas de nouvelle route SvelteKit pour ça.
+- `lib/components/` — `ControlBar.svelte` (choix dossier + écran + toggle écran noir), `ThumbnailList.svelte` (liste verticale scrollable, délègue chaque ligne à `ThumbnailRow.svelte` qui charge sa propre miniature via `get_thumbnail`), `ProjectionView.svelte` (rendu plein écran, fond noir par défaut, `object-fit: contain`), `KeyboardShortcuts.svelte` (composant sans rendu, juste les raccourcis clavier de la fenêtre de contrôle).
+- `lib/stores/` — `images.ts` (dossier + liste d'images), `projection.ts` (image courante, blackout, fonctions `selectImage`/`toggleBlackout` qui appellent les commandes Rust), `monitors.ts` (liste des moniteurs, moniteur choisi, persistance via `localStorage` — pas de plugin store, `localStorage` suffit pour une seule valeur). Pas de librairie de state management externe.
+- IPC : `invoke()` pour toute opération système/fs (scan dossier, thumbnails, image pleine résolution, moniteurs, gestion fenêtre, état de projection). `emit`/`listen` (événement `projection-changed`) réservés à la synchronisation fenêtre de contrôle → fenêtre de projection.
 
 ### Sécurité
 
-- Le périmètre fs (capabilities Tauri v2) est restreint au dossier choisi par l'utilisateur via le dialog natif. Pas d'accès fs arbitraire depuis le frontend.
+- Le frontend ne lit jamais un fichier directement : toute lecture d'image (miniature ou pleine résolution) passe par une commande Rust explicite qui renvoie une data URI base64. Pas de protocole `asset://`/`convertFileSrc`, donc pas de scope fs à configurer ni à élargir.
+- Le dialog natif est la seule façon de choisir un dossier ; aucune saisie manuelle de chemin côté frontend.
 - CSP par défaut de Tauri conservée, pas d'assouplissement sans raison documentée.
 
 ## Conventions de code
@@ -60,8 +65,8 @@ Ces éléments sont explicitement HORS SCOPE pour la v1 (PROJECT.md §7). Si une
 ## Tests
 
 - `cargo test` pour la logique Rust pure (scan de dossier, cache de vignettes, résolution de chemins).
-- Vitest + Testing Library pour les stores et composants critiques (sélection d'image, navigation clavier).
-- Pas d'e2e en v1 (trop lourd pour le scope) — une checklist de QA manuelle sert de filet à la place (voir Phase 6).
+- Vitest pour la logique frontend critique : la navigation clavier vit dans une fonction pure testée isolément (`src/lib/keyboard-nav.ts`), les stores qui appellent `invoke` sont testés avec `@tauri-apps/api/core` mocké (voir `src/lib/stores/projection.test.ts`). Pas de Testing Library/DOM en v1 tant que les composants restent de simples vues sans logique propre à tester.
+- Pas d'e2e en v1 (trop lourd pour le scope) — une checklist de QA manuelle sert de filet à la place (voir [QA_CHECKLIST.md](QA_CHECKLIST.md)).
 
 ## Commandes utiles
 
@@ -70,17 +75,18 @@ pnpm tauri dev                                        # lancer l'app en dev
 pnpm tauri build                                       # build de production
 pnpm run check                                         # svelte-check + tsc
 pnpm lint                                               # eslint + prettier --check
+pnpm test                                               # vitest (logique frontend)
 cargo clippy --manifest-path src-tauri/Cargo.toml       # lint Rust
 cargo test --manifest-path src-tauri/Cargo.toml         # tests Rust
 ```
 
 ## Feuille de route MVP
 
-- **Phase 1** — Sélection de dossier (plugin dialog) + listing brut des images (commande `list_images`).
-- **Phase 2** — Barre de vignettes avec cache de thumbnails (commande `get_thumbnail`, `convertFileSrc`).
-- **Phase 3** — Détection des moniteurs + fenêtre de projection positionnée/kiosk, persistance du choix (plugin store).
-- **Phase 4** — Clic → projection instantanée, fond noir par défaut, image centrée sans déformation.
-- **Phase 5** — Navigation clavier (flèches, next/prev) + raccourci écran noir.
-- **Phase 6** — Polish, icône, bundling Windows (NSIS/MSI), vérification du poids (<30 Mo), checklist de QA manuelle.
+- **Phase 1** ✅ — Sélection de dossier (plugin dialog) + listing brut des images (commande `list_images`).
+- **Phase 2** ✅ — Barre de vignettes avec cache de thumbnails (commande `get_thumbnail`, data URI base64).
+- **Phase 3** ✅ — Détection des moniteurs (`list_monitors`) + fenêtre de projection positionnée/kiosk (`open_projection_window`), persistance du choix via `localStorage`.
+- **Phase 4** ✅ — Clic → projection instantanée (`set_current_image` + événement `projection-changed`), fond noir par défaut, image centrée sans déformation.
+- **Phase 5** ✅ — Navigation clavier (flèches, next/prev) + raccourci écran noir (`toggle_blackout`, touche B).
+- **Phase 6** 🟡 — Bundling Windows (NSIS/MSI) ✅ et poids ✅ vérifiés (`pnpm tauri build` : exécutable 4,9 Mo, installeur MSI 2,4 Mo, installeur NSIS 1,7 Mo — largement sous les 30 Mo cibles). Reste à faire avant diffusion réelle : remplacer l'icône par défaut de `create-tauri-app` par une icône LiteShow, et dérouler [QA_CHECKLIST.md](QA_CHECKLIST.md) avec un vrai second écran.
 
 Ne pas anticiper les phases suivantes dans le code d'une phase donnée (pas d'abstraction "au cas où" pour une feature pas encore construite).

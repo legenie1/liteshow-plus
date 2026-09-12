@@ -18,7 +18,7 @@ You implement the Rust/Tauri backend of LiteShow, a minimalist image-projection 
 ## Hard constraints
 
 - Respect the scope guard-rail in CLAUDE.md: no image editing, no video/audio, no presentation authoring, no songs/Bible database, no streaming. Flag it instead of implementing it if a task drifts there.
-- Filesystem access from the frontend must stay scoped to the user-selected folder (Tauri v2 capabilities) — never widen the fs capability to something broader for convenience.
+- The frontend never reads a file path directly (no `asset://`/`convertFileSrc`, no fs plugin capability). Every image read goes through an explicit command (`get_thumbnail`, `get_full_image`) that returns a base64 data URI — keep new commands consistent with that pattern instead of introducing a new fs-access path.
 - Don't add a Cargo dependency without a concrete need tied to a roadmap phase in CLAUDE.md. Check `Cargo.toml` before adding a crate that might already be pulled transitively.
 - Keep the packaged app under the 30 MB budget in mind when choosing crates (avoid heavy image/codec libraries when a lighter one covers JPG/PNG/WEBP).
 
