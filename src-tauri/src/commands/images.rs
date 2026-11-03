@@ -1,10 +1,11 @@
+use std::cmp::Ordering;
 use std::fs;
 use std::path::Path;
 
 use serde::Serialize;
+use tauri::ipc::Response;
 
 use crate::error::AppError;
-use crate::imaging::{mime_for_extension, to_data_uri};
 
 const SUPPORTED_EXTENSIONS: [&str; 4] = ["jpg", "jpeg", "png", "webp"];
 
@@ -21,6 +22,47 @@ fn is_supported_image(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
+/// Returns the digit run starting at `start` without leading zeros, and its end index.
+fn digit_run(bytes: &[u8], start: usize) -> (&[u8], usize) {
+    let mut end = start;
+    while end < bytes.len() && bytes[end].is_ascii_digit() {
+        end += 1;
+    }
+    let mut first = start;
+    while first < end && bytes[first] == b'0' {
+        first += 1;
+    }
+    (&bytes[first..end], end)
+}
+
+/// Orders digit runs by numeric value, so "2.png" comes before "10.png".
+fn natural_cmp(a: &str, b: &str) -> Ordering {
+    let (a_bytes, b_bytes) = (a.as_bytes(), b.as_bytes());
+    let (mut i, mut j) = (0, 0);
+
+    while i < a_bytes.len() && j < b_bytes.len() {
+        let (x, y) = (a_bytes[i], b_bytes[j]);
+        let order = if x.is_ascii_digit() && y.is_ascii_digit() {
+            let (a_run, next_i) = digit_run(a_bytes, i);
+            let (b_run, next_j) = digit_run(b_bytes, j);
+            i = next_i;
+            j = next_j;
+            a_run.len().cmp(&b_run.len()).then(a_run.cmp(b_run))
+        } else {
+            i += 1;
+            j += 1;
+            x.to_ascii_lowercase().cmp(&y.to_ascii_lowercase())
+        };
+        if order != Ordering::Equal {
+            return order;
+        }
+    }
+
+    (a_bytes.len() - i)
+        .cmp(&(b_bytes.len() - j))
+        .then_with(|| a.cmp(b))
+}
+
 #[tauri::command(async)]
 pub fn list_images(folder: String) -> Result<Vec<ImageFile>, AppError> {
     let mut images: Vec<ImageFile> = fs::read_dir(&folder)?
@@ -34,18 +76,17 @@ pub fn list_images(folder: String) -> Result<Vec<ImageFile>, AppError> {
         })
         .collect();
 
-    images.sort_by(|a, b| a.name.cmp(&b.name));
+    images.sort_by(|a, b| natural_cmp(&a.name, &b.name));
 
     Ok(images)
 }
 
-/// Returns the original file as a base64 data URI, unmodified (no resize/re-encode),
-/// so the projection window renders it at full quality.
+/// Returns the original file as raw bytes, unmodified (no resize/re-encode), so the
+/// projection window renders it at full quality. Slides can weigh over 10 MB: raw
+/// bytes skip the base64 + JSON cost that made each click take over a second.
 #[tauri::command(async)]
-pub fn get_full_image(path: String) -> Result<String, AppError> {
-    let bytes = fs::read(&path)?;
-    let mime = mime_for_extension(Path::new(&path));
-    Ok(to_data_uri(&bytes, mime))
+pub fn get_full_image(path: String) -> Result<Response, AppError> {
+    Ok(Response::new(fs::read(&path)?))
 }
 
 #[cfg(test)]
@@ -65,6 +106,16 @@ mod tests {
         assert!(!is_supported_image(Path::new("slide.gif")));
         assert!(!is_supported_image(Path::new("notes.txt")));
         assert!(!is_supported_image(Path::new("no_extension")));
+    }
+
+    #[test]
+    fn sorts_numbers_by_value() {
+        let mut names = vec!["10.png", "2.png", "1.png", "02b.png", "20__.png", "20_.png"];
+        names.sort_by(|a, b| natural_cmp(a, b));
+        assert_eq!(
+            names,
+            ["1.png", "2.png", "02b.png", "10.png", "20_.png", "20__.png"]
+        );
     }
 
     #[test]

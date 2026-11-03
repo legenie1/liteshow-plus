@@ -8,13 +8,14 @@ use tauri::{AppHandle, Manager};
 use crate::error::AppError;
 use crate::imaging::to_data_uri;
 
-const THUMBNAIL_MAX_SIDE: u32 = 200;
+const THUMBNAIL_MAX_SIDE: u32 = 400;
 
 fn cache_key(path: &Path, modified_secs: u64, len: u64) -> String {
     let mut hasher = DefaultHasher::new();
     path.hash(&mut hasher);
     modified_secs.hash(&mut hasher);
     len.hash(&mut hasher);
+    THUMBNAIL_MAX_SIDE.hash(&mut hasher);
     format!("{:016x}.jpg", hasher.finish())
 }
 

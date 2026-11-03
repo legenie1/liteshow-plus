@@ -1,4 +1,5 @@
 use serde::Serialize;
+use tauri::window::Color;
 use tauri::{AppHandle, Manager, Monitor, Position, Size, WebviewUrl, WebviewWindowBuilder};
 
 use crate::error::AppError;
@@ -77,6 +78,7 @@ pub async fn open_projection_window(app: AppHandle, monitor_id: String) -> Resul
                 .resizable(false)
                 .shadow(false)
                 .visible(false)
+                .background_color(Color(0, 0, 0, 255))
                 .build()?
         }
     };

@@ -27,25 +27,25 @@ Ces éléments sont explicitement HORS SCOPE pour la v1 (PROJECT.md §7). Si une
 ### Backend (`src-tauri/src/`)
 
 - `commands/` — une commande Tauri par fichier/domaine :
-  - `images.rs` — `list_images` (scan non récursif d'un dossier), `get_full_image` (lecture brute d'un fichier, encodée en data URI base64, sans réencodage — qualité originale pour la projection).
-  - `thumbnails.rs` — `get_thumbnail` : génère une miniature (`image` crate, 200px max), mise en cache sur disque (app cache dir) avec une clé dérivée du chemin + mtime + taille, retournée en data URI base64.
+  - `images.rs` — `list_images` (scan non récursif d'un dossier), `get_full_image` (octets bruts du fichier via `tauri::ipc::Response`, sans réencodage ni base64 : qualité originale, et un clic ne paie pas le coût JSON sur des slides de 10 Mo).
+  - `thumbnails.rs` — `get_thumbnail` : génère une miniature (`image` crate, 400px max), mise en cache sur disque (app cache dir) avec une clé dérivée du chemin + mtime + taille, retournée en data URI base64.
   - `monitors.rs` — `list_monitors` (détection via `tauri::Monitor`), `open_projection_window` (crée ou repositionne la fenêtre `projection` : sans décorations, non redimensionnable, taille/position = le moniteur choisi).
   - `projection.rs` — `set_current_image`, `toggle_blackout`, `get_projection_state` : lisent/écrivent `AppState` et émettent l'événement `projection-changed` vers toutes les fenêtres à chaque changement.
 - `state.rs` — `AppState { current_image, is_blackout }` sous `Mutex`, injecté via `tauri::State`.
-- `imaging.rs` — utilitaires partagés (détection MIME par extension, encodage en data URI), réutilisés par `images.rs` et `thumbnails.rs`.
+- `imaging.rs` — encodage en data URI, utilisé par `thumbnails.rs`.
 - `main.rs` / `lib.rs` — uniquement le bootstrap (builder Tauri, enregistrement des commandes/plugins). Aucune logique métier ici.
 - Erreurs : `AppError` sérialisable (`serde::Serialize`), renvoyé en `Result<T, AppError>` depuis les commandes. Pas de `unwrap()`/`expect()` en dehors des tests.
 
 ### Frontend (`src/`)
 
 - `routes/+page.svelte` — composition root unique. Branch au runtime sur `getCurrentWindow().label` : `"projection"` → `ProjectionView`, sinon → `ControlBar` + `ThumbnailList` + `KeyboardShortcuts`. Une seule fenêtre "control", une seule fenêtre "projection", pas de nouvelle route SvelteKit pour ça.
-- `lib/components/` — `ControlBar.svelte` (choix dossier + écran + toggle écran noir), `ThumbnailList.svelte` (liste verticale scrollable, délègue chaque ligne à `ThumbnailRow.svelte` qui charge sa propre miniature via `get_thumbnail`), `ProjectionView.svelte` (rendu plein écran, fond noir par défaut, `object-fit: contain`), `KeyboardShortcuts.svelte` (composant sans rendu, juste les raccourcis clavier de la fenêtre de contrôle).
+- `lib/components/` — `ControlBar.svelte` (choix dossier + écran + toggle écran noir), `ThumbnailList.svelte` (grille scrollable qui se réduit à une colonne en fenêtre étroite, délègue chaque case à `ThumbnailRow.svelte` qui charge sa miniature à l'approche de la zone visible, via `get_thumbnail` et la file `lib/task-queue.ts`), `ProjectionView.svelte` (rendu plein écran, fond noir par défaut, `object-fit: contain`), `KeyboardShortcuts.svelte` (composant sans rendu, juste les raccourcis clavier de la fenêtre de contrôle).
 - `lib/stores/` — `images.ts` (dossier + liste d'images), `projection.ts` (image courante, blackout, fonctions `selectImage`/`toggleBlackout` qui appellent les commandes Rust), `monitors.ts` (liste des moniteurs, moniteur choisi, persistance via `localStorage` — pas de plugin store, `localStorage` suffit pour une seule valeur). Pas de librairie de state management externe.
 - IPC : `invoke()` pour toute opération système/fs (scan dossier, thumbnails, image pleine résolution, moniteurs, gestion fenêtre, état de projection). `emit`/`listen` (événement `projection-changed`) réservés à la synchronisation fenêtre de contrôle → fenêtre de projection.
 
 ### Sécurité
 
-- Le frontend ne lit jamais un fichier directement : toute lecture d'image (miniature ou pleine résolution) passe par une commande Rust explicite qui renvoie une data URI base64. Pas de protocole `asset://`/`convertFileSrc`, donc pas de scope fs à configurer ni à élargir.
+- Le frontend ne lit jamais un fichier directement : toute lecture d'image passe par une commande Rust explicite (miniature : data URI base64 ; pleine résolution : octets bruts affichés via une URL `blob:`). Pas de protocole `asset://`/`convertFileSrc`, donc pas de scope fs à configurer ni à élargir.
 - Le dialog natif est la seule façon de choisir un dossier ; aucune saisie manuelle de chemin côté frontend.
 - CSP par défaut de Tauri conservée, pas d'assouplissement sans raison documentée.
 

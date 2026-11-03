@@ -20,9 +20,21 @@
 
 <style>
   :global(:root) {
-    font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-    color: #f6f6f6;
-    background-color: #1e1e1e;
+    --text: #f2f2f2;
+    --muted: #a0a0a0;
+    --line: #333;
+    --surface: #262626;
+    --accent: #4c9aff;
+    --danger: #e5484d;
+    color-scheme: dark;
+    font-family: "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    background-color: #171717;
+  }
+
+  :global(body) {
+    margin: 0;
+    overflow: hidden;
   }
 
   .control {

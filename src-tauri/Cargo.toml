@@ -33,3 +33,7 @@ lto = true
 opt-level = 3
 panic = "abort"
 strip = true
+
+# Image decoding is very slow unoptimized, which skews every `tauri dev` session.
+[profile.dev.package."*"]
+opt-level = 2
