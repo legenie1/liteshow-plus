@@ -19,8 +19,11 @@
     try {
       const found = await loadMonitors();
       const remembered = getRememberedMonitorId();
-      if (remembered && found.some((m) => m.id === remembered)) {
-        await selectMonitor(remembered);
+      const initial =
+        found.find((m) => m.id === remembered) ??
+        found.find((m) => !m.isPrimary);
+      if (initial) {
+        await selectMonitor(initial.id);
       }
     } catch (err) {
       error = String(err);

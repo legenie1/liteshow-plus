@@ -21,7 +21,7 @@ fn is_supported_image(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn list_images(folder: String) -> Result<Vec<ImageFile>, AppError> {
     let mut images: Vec<ImageFile> = fs::read_dir(&folder)?
         .filter_map(|entry| entry.ok())
@@ -41,7 +41,7 @@ pub fn list_images(folder: String) -> Result<Vec<ImageFile>, AppError> {
 
 /// Returns the original file as a base64 data URI, unmodified (no resize/re-encode),
 /// so the projection window renders it at full quality.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_full_image(path: String) -> Result<String, AppError> {
     let bytes = fs::read(&path)?;
     let mime = mime_for_extension(Path::new(&path));

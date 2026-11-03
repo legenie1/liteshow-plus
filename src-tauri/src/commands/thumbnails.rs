@@ -27,7 +27,7 @@ fn thumbnail_cache_dir(app: &AppHandle) -> Result<PathBuf, AppError> {
 /// Returns a small JPEG thumbnail of `path` as a base64 data URI, generating and
 /// caching it on disk on first request. Re-requesting the same path only regenerates
 /// the thumbnail if the file's mtime/size changed.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn get_thumbnail(app: AppHandle, path: String) -> Result<String, AppError> {
     let source = Path::new(&path);
     let metadata = fs::metadata(source)?;
