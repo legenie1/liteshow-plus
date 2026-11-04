@@ -10,10 +10,20 @@
     selectMonitor,
     getRememberedMonitorId,
   } from "$lib/stores/monitors";
-  import { isBlackout, toggleBlackout } from "$lib/stores/projection";
+  import {
+    currentImage,
+    isBlackout,
+    resumeImage,
+    toggleBlackout,
+  } from "$lib/stores/projection";
+  import { loadTheme, showTheme, themeImage } from "$lib/stores/theme";
   import type { ImageFile, MonitorInfo } from "$lib/types";
 
   let error = $state<string | null>(null);
+
+  const themeOnScreen = $derived(
+    $themeImage !== null && $currentImage === $themeImage && !$isBlackout,
+  );
 
   onMount(async () => {
     try {
@@ -54,6 +64,7 @@
       });
       folderPath.set(selected);
       images.set(found);
+      loadTheme(selected, found);
     } catch (err) {
       error = String(err);
     }
@@ -100,6 +111,18 @@
   </select>
 
   <button
+    class="theme-button"
+    class:active={themeOnScreen}
+    disabled={!$themeImage}
+    title={$themeImage
+      ? "Afficher la diapo du thème"
+      : "Marque une diapo avec son étoile pour la définir comme thème"}
+    onclick={showTheme}
+  >
+    ★ {themeOnScreen && $resumeImage ? "Revenir" : "Thème"} <kbd>T</kbd>
+  </button>
+
+  <button
     class="blackout-toggle"
     class:active={$isBlackout}
     onclick={toggleBlackout}
@@ -141,6 +164,20 @@
     color: var(--muted);
     font: inherit;
     font-size: 0.75rem;
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  button:disabled:hover {
+    border-color: var(--line);
+  }
+
+  .theme-button.active {
+    border-color: var(--theme);
+    color: var(--theme);
   }
 
   .blackout-toggle.active {

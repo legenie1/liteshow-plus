@@ -6,10 +6,12 @@
   interface Props {
     image: ImageFile;
     selected: boolean;
+    isTheme: boolean;
     onselect: () => void;
+    ontheme: () => void;
   }
 
-  const { image, selected, onselect }: Props = $props();
+  const { image, selected, isTheme, onselect, ontheme }: Props = $props();
 
   let button = $state<HTMLButtonElement>();
   let visible = $state(false);
@@ -55,16 +57,59 @@
   });
 </script>
 
-<button bind:this={button} class="slide" class:selected onclick={onselect}>
-  <span class="thumb">
-    {#if thumbnail}
-      <img src={thumbnail} alt="" />
-    {/if}
-  </span>
-  <span class="name" title={image.name}>{image.name}</span>
-</button>
+<div class="tile">
+  <button bind:this={button} class="slide" class:selected onclick={onselect}>
+    <span class="thumb">
+      {#if thumbnail}
+        <img src={thumbnail} alt="" />
+      {/if}
+    </span>
+    <span class="name" title={image.name}>{image.name}</span>
+  </button>
+  <button
+    class="star"
+    class:on={isTheme}
+    aria-pressed={isTheme}
+    title={isTheme ? "Retirer le thème" : "Définir comme thème"}
+    onclick={ontheme}
+  >
+    ★
+  </button>
+</div>
 
 <style>
+  .tile {
+    position: relative;
+  }
+
+  .star {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+  }
+
+  .tile:hover .star,
+  .star:focus-visible,
+  .star.on {
+    opacity: 1;
+  }
+
+  .star:hover,
+  .star.on {
+    color: var(--theme);
+  }
+
   .slide {
     display: block;
     width: 100%;

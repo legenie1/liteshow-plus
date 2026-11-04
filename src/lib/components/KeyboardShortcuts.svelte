@@ -4,13 +4,16 @@
   import { images } from "$lib/stores/images";
   import {
     currentImage,
+    resumeImage,
     selectImage,
     toggleBlackout,
   } from "$lib/stores/projection";
+  import { showTheme } from "$lib/stores/theme";
   import { stepImagePath } from "$lib/keyboard-nav";
 
   function step(delta: number) {
-    const nextPath = stepImagePath(get(images), get(currentImage), delta);
+    const from = get(resumeImage) ?? get(currentImage);
+    const nextPath = stepImagePath(get(images), from, delta);
     if (nextPath) selectImage(nextPath);
   }
 
@@ -37,6 +40,11 @@
       case "B":
         event.preventDefault();
         toggleBlackout();
+        break;
+      case "t":
+      case "T":
+        event.preventDefault();
+        showTheme();
         break;
     }
   }

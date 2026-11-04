@@ -26,6 +26,7 @@
     --surface: #262626;
     --accent: #4c9aff;
     --danger: #e5484d;
+    --theme: #f5b301;
     color-scheme: dark;
     font-family: "Segoe UI", Inter, Helvetica, Arial, sans-serif;
     color: var(--text);

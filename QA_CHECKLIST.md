@@ -38,6 +38,15 @@ Pas de tests e2e en v1 (voir CLAUDE.md). Cette checklist sert de filet avant de 
 - [ ] Toucher "B" à nouveau → l'image précédemment sélectionnée réapparaît
 - [ ] Cliquer une nouvelle vignette pendant l'écran noir → annule le noir et projette l'image choisie
 
+## Diapo du thème
+
+- [ ] Sans diapo marquée, le bouton "Thème" est désactivé et la touche "T" ne fait rien
+- [ ] Cliquer l'étoile d'une vignette → la diapo est marquée, sans être projetée
+- [ ] Bouton "Thème" ou touche "T" → la diapo du thème s'affiche, y compris pendant un écran noir
+- [ ] Deuxième appui ("Revenir") → retour à la diapo interrompue
+- [ ] Depuis le thème, flèche suivante → passe à la diapo qui suit la diapo interrompue
+- [ ] Fermer puis rouvrir l'app, re-choisir le dossier → le thème est retenu pour ce dossier, pas pour les autres
+
 ## Poids et démarrage
 
 - [ ] `pnpm tauri build` produit un exécutable/installeur, taille totale du bundle < 30 Mo

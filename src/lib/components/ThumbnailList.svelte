@@ -1,6 +1,7 @@
 <script lang="ts">
   import { images } from "$lib/stores/images";
   import { currentImage, selectImage } from "$lib/stores/projection";
+  import { themeImage, toggleTheme } from "$lib/stores/theme";
   import ThumbnailRow from "$lib/components/ThumbnailRow.svelte";
 </script>
 
@@ -13,7 +14,9 @@
         <ThumbnailRow
           {image}
           selected={$currentImage === image.path}
+          isTheme={$themeImage === image.path}
           onselect={() => selectImage(image.path)}
+          ontheme={() => toggleTheme(image.path)}
         />
       </li>
     {/each}
