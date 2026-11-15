@@ -1,17 +1,28 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import { invoke } from "@tauri-apps/api/core";
+  import { convertFileSrc, invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
   import type { ProjectionState } from "$lib/types";
 
   let imagePath = $state<string | null>(null);
   let blackout = $state(false);
   let imageUrl = $state<string | null>(null);
+  let videoName = $state<string | null>(null);
+  let videoSerial = $state(0);
+  let videoLoop = $state(false);
+  let videoMuted = $state(false);
+  let videoEl = $state<HTMLVideoElement>();
   let error = $state<string | null>(null);
+  let videoError = $state(false);
 
   function applyState(state: ProjectionState) {
     blackout = state.blackout;
     imagePath = state.image;
+    videoName = state.video;
+    videoSerial = state.videoSerial;
+    videoLoop = state.videoLoop;
+    videoMuted = state.videoMuted;
+    videoError = false;
   }
 
   $effect(() => {
@@ -36,6 +47,22 @@
       cancelled = true;
       unlisten.then((fn) => fn());
     };
+  });
+
+  $effect(() => {
+    const unlisten = listen<string>("video-control", () => {
+      if (!videoEl) return;
+      if (videoEl.paused) void videoEl.play().catch(() => {});
+      else videoEl.pause();
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  });
+
+  // The sound would keep going behind a black screen.
+  $effect(() => {
+    if (blackout) videoEl?.pause();
   });
 
   function showImage(url: string | null) {
@@ -82,6 +109,21 @@
 <main class="projection">
   {#if error}
     <p class="error">{error}</p>
+  {:else if videoName && videoError}
+    <p class="error">Vidéo illisible ou format non pris en charge.</p>
+  {:else if videoName}
+    <!-- Re-created on every selection, so the same video starts over. -->
+    {#key videoSerial}
+      <video
+        bind:this={videoEl}
+        class:hidden={blackout}
+        src={convertFileSrc(videoName, "lsvideo")}
+        autoplay
+        loop={videoLoop}
+        muted={videoMuted}
+        onerror={() => (videoError = true)}
+      ></video>
+    {/key}
   {:else if !blackout && imageUrl}
     <img src={imageUrl} alt="" />
   {/if}
@@ -98,10 +140,15 @@
     overflow: hidden;
   }
 
-  .projection img {
+  .projection img,
+  .projection video {
     width: 100%;
     height: 100%;
     object-fit: contain;
+  }
+
+  .projection video.hidden {
+    visibility: hidden;
   }
 
   .error {

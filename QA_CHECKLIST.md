@@ -47,6 +47,23 @@ Pas de tests e2e en v1 (voir CLAUDE.md). Cette checklist sert de filet avant de 
 - [ ] Depuis le thème, flèche suivante → passe à la diapo qui suit la diapo interrompue
 - [ ] Fermer puis rouvrir l'app, re-choisir le dossier → le thème est retenu pour ce dossier, pas pour les autres
 
+## Onglet Vidéos
+
+- [ ] Onglet "Vidéos" → "Choisir un dossier" liste les mp4/webm/mov du dossier, ignore le reste, et ne touche pas à la liste des diapos
+- [ ] Les vignettes affichent une image de la vidéo (pas un cadre noir) ; un dossier de 30 vidéos ne fige pas l'interface
+- [ ] Cliquer une vidéo → elle démarre seule sur l'écran de projection, avec le son, sans aucun clic dans la fenêtre de projection
+- [ ] Espace → pause, Espace → reprise (la fenêtre de contrôle garde le focus)
+- [ ] Cliquer la vidéo en cours → elle repart du début
+- [ ] Flèches → vidéo suivante/précédente, arrêt au bord de la liste
+- [ ] Bouton "Boucle" ou touche "L" → la vidéo se rejoue sans s'arrêter ; L à nouveau → elle s'arrête à la fin. Le mode reste actif en passant à une autre vidéo
+- [ ] Bouton "Muet" ou touche "M" → le son se coupe sans interrompre l'image ; M à nouveau → le son revient. Le mode reste actif en passant à une autre vidéo
+- [ ] "B" pendant une vidéo → écran noir et le son s'arrête ; "B" à nouveau → image figée, Espace relance
+- [ ] Cliquer une diapo (onglet Diapos) pendant une vidéo → la vidéo disparaît, la diapo s'affiche, plus de son
+- [ ] Touche "T" pendant une vidéo → la diapo du thème remplace la vidéo
+- [ ] Une vidéo MP4 non faststart (moov en fin de fichier) de plus de 1 Go démarre en moins de 2-3 s et se laisse déplacer au curseur sans plantage
+- [ ] Un fichier .mp4 corrompu ou un codec non pris en charge affiche "Vidéo illisible…" sans bloquer la suite
+- [ ] Un nom de fichier avec accents, espaces et # (ex. "Intro été #2.mp4") se lit normalement
+
 ## Poids et démarrage
 
 - [ ] `pnpm tauri build` produit un exécutable/installeur, taille totale du bundle < 30 Mo

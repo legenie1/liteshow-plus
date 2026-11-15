@@ -1,4 +1,4 @@
-import type { ImageFile } from "$lib/types";
+import type { ImageFile, VideoFile } from "$lib/types";
 
 /**
  * Resolves the path to select after a `delta` step (±1) from the currently
@@ -10,13 +10,31 @@ export function stepImagePath(
   currentPath: string | null,
   delta: number,
 ): string | null {
-  if (images.length === 0) return null;
+  return step(images, (image) => image.path, currentPath, delta);
+}
 
-  const currentIndex = images.findIndex((image) => image.path === currentPath);
+/** Same as `stepImagePath`, for the "Vidéos" tab (videos are identified by name). */
+export function stepVideoName(
+  videos: VideoFile[],
+  currentName: string | null,
+  delta: number,
+): string | null {
+  return step(videos, (video) => video.name, currentName, delta);
+}
+
+function step<T>(
+  items: T[],
+  key: (item: T) => string,
+  current: string | null,
+  delta: number,
+): string | null {
+  if (items.length === 0) return null;
+
+  const currentIndex = items.findIndex((item) => key(item) === current);
   const nextIndex =
     currentIndex === -1
       ? 0
-      : Math.min(Math.max(currentIndex + delta, 0), images.length - 1);
+      : Math.min(Math.max(currentIndex + delta, 0), items.length - 1);
 
-  return images[nextIndex].path;
+  return key(items[nextIndex]);
 }

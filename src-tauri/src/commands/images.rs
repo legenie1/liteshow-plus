@@ -36,7 +36,7 @@ fn digit_run(bytes: &[u8], start: usize) -> (&[u8], usize) {
 }
 
 /// Orders digit runs by numeric value, so "2.png" comes before "10.png".
-fn natural_cmp(a: &str, b: &str) -> Ordering {
+pub(crate) fn natural_cmp(a: &str, b: &str) -> Ordering {
     let (a_bytes, b_bytes) = (a.as_bytes(), b.as_bytes());
     let (mut i, mut j) = (0, 0);
 

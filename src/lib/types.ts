@@ -3,6 +3,10 @@ export interface ImageFile {
   path: string;
 }
 
+export interface VideoFile {
+  name: string;
+}
+
 export interface MonitorInfo {
   id: string;
   name: string;
@@ -15,5 +19,9 @@ export interface MonitorInfo {
 
 export interface ProjectionState {
   image: string | null;
+  video: string | null;
+  videoSerial: number;
+  videoLoop: boolean;
+  videoMuted: boolean;
   blackout: boolean;
 }

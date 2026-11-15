@@ -9,7 +9,7 @@ Visionneuse-projecteur minimaliste : un dossier d'images, une barre de vignettes
 Ces éléments sont explicitement HORS SCOPE pour la v1 (PROJECT.md §7). Si une demande ou une idée pousse vers l'un de ces points, le signaler et proposer de le reporter en v2 plutôt que de l'implémenter :
 
 - Édition/retouche d'image, texte superposé
-- Vidéo ou audio
+- Édition de vidéo, playlists vidéo, audio seul (la lecture de fichiers vidéo locaux dans l'onglet « Vidéos » est dans le scope, décision du 2026-11-15)
 - Création de présentation from scratch
 - Connexion à une base de données de chants/Bible
 - Streaming en ligne
@@ -30,8 +30,9 @@ Ces éléments sont explicitement HORS SCOPE pour la v1 (PROJECT.md §7). Si une
   - `images.rs` — `list_images` (scan non récursif d'un dossier), `get_full_image` (octets bruts du fichier via `tauri::ipc::Response`, sans réencodage ni base64 : qualité originale, et un clic ne paie pas le coût JSON sur des slides de 10 Mo).
   - `thumbnails.rs` — `get_thumbnail` : génère une miniature (`image` crate, 400px max), mise en cache sur disque (app cache dir) avec une clé dérivée du chemin + mtime + taille, retournée en data URI base64.
   - `monitors.rs` — `list_monitors` (détection via `tauri::Monitor`), `open_projection_window` (crée ou repositionne la fenêtre `projection` : sans décorations, non redimensionnable, taille/position = le moniteur choisi).
-  - `projection.rs` — `set_current_image`, `toggle_blackout`, `get_projection_state` : lisent/écrivent `AppState` et émettent l'événement `projection-changed` vers toutes les fenêtres à chaque changement.
-- `state.rs` — `AppState { current_image, is_blackout }` sous `Mutex`, injecté via `tauri::State`.
+  - `projection.rs` — `set_current_image`, `set_current_video`, `toggle_blackout`, `get_projection_state` : lisent/écrivent `AppState` et émettent l'événement `projection-changed` vers toutes les fenêtres à chaque changement. Image et vidéo s'excluent : en choisir une efface l'autre.
+  - `videos.rs` — `list_videos` (scan non récursif, mp4/m4v/mov/webm, retient le dossier dans `AppState`), `toggle_video_playback` (émet `video-control` vers la fenêtre de projection) et le protocole `lsvideo://` (voir Sécurité).
+- `state.rs` — `AppState { current_image, current_video, video_serial, video_folder, is_blackout }` sous `Mutex`, injecté via `tauri::State`.
 - `imaging.rs` — encodage en data URI, utilisé par `thumbnails.rs`.
 - `main.rs` / `lib.rs` — uniquement le bootstrap (builder Tauri, enregistrement des commandes/plugins). Aucune logique métier ici.
 - Erreurs : `AppError` sérialisable (`serde::Serialize`), renvoyé en `Result<T, AppError>` depuis les commandes. Pas de `unwrap()`/`expect()` en dehors des tests.
@@ -39,13 +40,15 @@ Ces éléments sont explicitement HORS SCOPE pour la v1 (PROJECT.md §7). Si une
 ### Frontend (`src/`)
 
 - `routes/+page.svelte` — composition root unique. Branch au runtime sur `getCurrentWindow().label` : `"projection"` → `ProjectionView`, sinon → `ControlBar` + `ThumbnailList` + `KeyboardShortcuts`. Une seule fenêtre "control", une seule fenêtre "projection", pas de nouvelle route SvelteKit pour ça.
-- `lib/components/` — `ControlBar.svelte` (choix dossier + écran + toggle écran noir), `ThumbnailList.svelte` (grille scrollable qui se réduit à une colonne en fenêtre étroite, délègue chaque case à `ThumbnailRow.svelte` qui charge sa miniature à l'approche de la zone visible, via `get_thumbnail` et la file `lib/task-queue.ts`), `ProjectionView.svelte` (rendu plein écran, fond noir par défaut, `object-fit: contain`), `KeyboardShortcuts.svelte` (composant sans rendu, juste les raccourcis clavier de la fenêtre de contrôle).
-- `lib/stores/` — `images.ts` (dossier + liste d'images), `projection.ts` (image courante, blackout, fonctions `selectImage`/`toggleBlackout` qui appellent les commandes Rust), `theme.ts` (diapo du thème, une par dossier, persistée via `localStorage`, et `showTheme` qui l'affiche puis revient à la diapo interrompue), `monitors.ts` (liste des moniteurs, moniteur choisi, persistance via `localStorage` — pas de plugin store, `localStorage` suffit pour une seule valeur). Pas de librairie de state management externe.
+- `lib/components/` — `ControlBar.svelte` (choix dossier + écran + toggle écran noir), `ThumbnailList.svelte` (grille scrollable qui se réduit à une colonne en fenêtre étroite, délègue chaque case à `ThumbnailRow.svelte` qui charge sa miniature à l'approche de la zone visible, via `get_thumbnail` et la file `lib/task-queue.ts`), `ProjectionView.svelte` (rendu plein écran, fond noir par défaut, `object-fit: contain`, image ou `<video>`), `VideoList.svelte` / `VideoRow.svelte` (onglet « Vidéos » : même grille que les diapos, vignette = `<video preload="metadata">` figé à 0,5 s, sans ffmpeg), `KeyboardShortcuts.svelte` (composant sans rendu, juste les raccourcis clavier de la fenêtre de contrôle).
+- `lib/stores/` — `images.ts` (dossier + liste d'images), `projection.ts` (image courante, blackout, fonctions `selectImage`/`toggleBlackout` qui appellent les commandes Rust), `theme.ts` (diapo du thème, une par dossier, persistée via `localStorage`, et `showTheme` qui l'affiche puis revient à la diapo interrompue), `videos.ts` (onglet actif, dossier et liste des vidéos), `monitors.ts` (liste des moniteurs, moniteur choisi, persistance via `localStorage` — pas de plugin store, `localStorage` suffit pour une seule valeur). Pas de librairie de state management externe.
 - IPC : `invoke()` pour toute opération système/fs (scan dossier, thumbnails, image pleine résolution, moniteurs, gestion fenêtre, état de projection). `emit`/`listen` (événement `projection-changed`) réservés à la synchronisation fenêtre de contrôle → fenêtre de projection.
 
 ### Sécurité
 
-- Le frontend ne lit jamais un fichier directement : toute lecture d'image passe par une commande Rust explicite (miniature : data URI base64 ; pleine résolution : octets bruts affichés via une URL `blob:`). Pas de protocole `asset://`/`convertFileSrc`, donc pas de scope fs à configurer ni à élargir.
+- Le frontend ne lit jamais un fichier directement : toute lecture d'image passe par une commande Rust explicite (miniature : data URI base64 ; pleine résolution : octets bruts affichés via une URL `blob:`). Pas de protocole `asset://`, donc pas de scope fs à configurer ni à élargir.
+- Seule exception, les vidéos (trop lourdes pour l'IPC) : le protocole custom `lsvideo://` sert des plages d'octets (Range, tranches de 4 Mo). Il ne reçoit qu'un nom de fichier, jamais un chemin, et ne lit que dans le dossier retenu par `list_videos`, avec une extension vidéo autorisée (`resolve_video`, testé). Ne pas l'élargir à autre chose.
+- Windows : `lib.rs` pose `--autoplay-policy=no-user-gesture-required` (variable `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`), sinon la fenêtre de projection, qui ne reçoit jamais de clic, refuse de lancer une vidéo avec son.
 - Le dialog natif est la seule façon de choisir un dossier ; aucune saisie manuelle de chemin côté frontend.
 - CSP par défaut de Tauri conservée, pas d'assouplissement sans raison documentée.
 

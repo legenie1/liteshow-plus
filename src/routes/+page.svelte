@@ -2,6 +2,8 @@
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import ControlBar from "$lib/components/ControlBar.svelte";
   import ThumbnailList from "$lib/components/ThumbnailList.svelte";
+  import VideoList from "$lib/components/VideoList.svelte";
+  import { activeTab } from "$lib/stores/videos";
   import ProjectionView from "$lib/components/ProjectionView.svelte";
   import KeyboardShortcuts from "$lib/components/KeyboardShortcuts.svelte";
 
@@ -13,7 +15,11 @@
 {:else}
   <main class="control">
     <ControlBar />
-    <ThumbnailList />
+    {#if $activeTab === "videos"}
+      <VideoList />
+    {:else}
+      <ThumbnailList />
+    {/if}
   </main>
   <KeyboardShortcuts />
 {/if}

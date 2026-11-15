@@ -65,6 +65,17 @@ L'opérateur clique sur une vignette dans la barre de contrôle → l'image s'af
 - Raccourci pour "écran noir" (couper la projection sans fermer l'app) — très utile en régie
 - Raccourci "image suivante / précédente"
 
+### 5.6 Onglet Vidéos
+
+Un second onglet de la fenêtre de contrôle, à côté de "Diapos", pour les intros de culte et boucles d'annonces :
+- Même principe que les diapos : choix d'un dossier (mp4, m4v, mov, webm), grille de vignettes nommées, un clic = projection sur l'écran choisi. La vidéo démarre seule, avec son.
+- Espace = lecture/pause. Flèches = vidéo suivante/précédente. B = écran noir (la vidéo se met en pause). Re-cliquer la vidéo à l'écran la relance depuis le début.
+- L = mode boucle : la vidéo en cours et les suivantes se rejouent sans fin tant qu'il est actif.
+- M = muet : coupe le son de la vidéo à l'écran et des suivantes, sans toucher au volume du système.
+- Le thème (touche T) reste utilisable depuis cet onglet pour revenir à une diapo après la vidéo.
+- Lecture par la balise `<video>` du WebView, sans dépendance ajoutée. Vignette = image de la vidéo à 0,5 s, sans ffmpeg.
+- Les fichiers sont servis par un protocole `lsvideo://` avec requêtes Range, limité au dossier choisi (voir CLAUDE.md, Sécurité).
+
 ## 6. Flux utilisateur (workflow)
 
 1. L'utilisateur ouvre l'application
@@ -79,7 +90,7 @@ L'opérateur clique sur une vignette dans la barre de contrôle → l'image s'af
 
 Pour respecter la promesse de simplicité, l'application ne doit *pas*, du moins dans une v1 :
 - Éditer ou modifier les images (pas de retouche, pas de texte superposé)
-- Gérer les vidéos ou l'audio
+- Éditer des vidéos, gérer des playlists vidéo ou jouer de l'audio seul (la lecture de fichiers vidéo locaux, elle, est dans l'onglet "Vidéos")
 - Créer des présentations à partir de zéro
 - Se connecter à des bases de données de chants/Bible
 - Streamer en ligne
@@ -109,7 +120,6 @@ Ces éléments peuvent être des pistes pour des versions futures (voir section 
 ## 9. Fonctionnalités futures possibles (v2+)
 
 *À considérer seulement après validation du MVP :*
-- Support des vidéos courtes (boucles d'annonces)
 - Transitions douces (fondu) entre deux images
 - Réorganisation manuelle de l'ordre des slides (glisser-déposer)
 - Playlists / listes de lecture prédéfinies pour un événement
