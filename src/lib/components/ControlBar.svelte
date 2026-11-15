@@ -16,10 +16,6 @@
     isBlackout,
     resumeImage,
     toggleBlackout,
-    toggleVideoLoop,
-    toggleVideoMute,
-    videoLoop,
-    videoMuted,
   } from "$lib/stores/projection";
   import { loadTheme, showTheme, themeImage } from "$lib/stores/theme";
   import type { ImageFile, MonitorInfo, VideoFile } from "$lib/types";
@@ -146,27 +142,6 @@
     {/each}
   </select>
 
-  {#if onVideos}
-    <button
-      class="loop-button"
-      class:active={$videoLoop}
-      aria-pressed={$videoLoop}
-      title="Rejouer la vidéo en boucle"
-      onclick={toggleVideoLoop}
-    >
-      ⟲ Boucle <kbd>L</kbd>
-    </button>
-    <button
-      class="loop-button"
-      class:active={$videoMuted}
-      aria-pressed={$videoMuted}
-      title="Couper le son de la vidéo"
-      onclick={toggleVideoMute}
-    >
-      Muet <kbd>M</kbd>
-    </button>
-  {/if}
-
   <button
     class="theme-button"
     class:active={themeOnScreen}
@@ -251,11 +226,6 @@
 
   .tabs button.active {
     position: relative;
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  .loop-button.active {
     border-color: var(--accent);
     color: var(--accent);
   }

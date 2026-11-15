@@ -1,6 +1,13 @@
 <script lang="ts">
   import { videos } from "$lib/stores/videos";
-  import { currentVideo, selectVideo } from "$lib/stores/projection";
+  import {
+    currentVideo,
+    selectVideo,
+    toggleVideoLoop,
+    toggleVideoMute,
+    videoLoop,
+    videoMuted,
+  } from "$lib/stores/projection";
   import VideoRow from "$lib/components/VideoRow.svelte";
 </script>
 
@@ -13,7 +20,11 @@
         <VideoRow
           {video}
           selected={$currentVideo === video.name}
+          looping={$videoLoop}
+          muted={$videoMuted}
           onselect={() => selectVideo(video.name)}
+          ontoggleloop={toggleVideoLoop}
+          ontogglemute={toggleVideoMute}
         />
       </li>
     {/each}

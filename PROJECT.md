@@ -70,8 +70,8 @@ L'opérateur clique sur une vignette dans la barre de contrôle → l'image s'af
 Un second onglet de la fenêtre de contrôle, à côté de "Diapos", pour les intros de culte et boucles d'annonces :
 - Même principe que les diapos : choix d'un dossier (mp4, m4v, mov, webm), grille de vignettes nommées, un clic = projection sur l'écran choisi. La vidéo démarre seule, avec son.
 - Espace = lecture/pause. Flèches = vidéo suivante/précédente. B = écran noir (la vidéo se met en pause). Re-cliquer la vidéo à l'écran la relance depuis le début.
-- L = mode boucle : la vidéo en cours et les suivantes se rejouent sans fin tant qu'il est actif.
-- M = muet : coupe le son de la vidéo à l'écran et des suivantes, sans toucher au volume du système.
+- La carte de la vidéo projetée porte deux boutons, "Boucle" (touche L) et "Muet" (touche M). Boucle : la vidéo en cours et les suivantes se rejouent sans fin tant qu'il est actif.
+- Muet : coupe le son de la vidéo à l'écran et des suivantes, sans toucher au volume du système.
 - Le thème (touche T) reste utilisable depuis cet onglet pour revenir à une diapo après la vidéo.
 - Lecture par la balise `<video>` du WebView, sans dépendance ajoutée. Vignette = image de la vidéo à 0,5 s, sans ffmpeg.
 - Les fichiers sont servis par un protocole `lsvideo://` avec requêtes Range, limité au dossier choisi (voir CLAUDE.md, Sécurité).

@@ -5,10 +5,22 @@
   interface Props {
     video: VideoFile;
     selected: boolean;
+    looping: boolean;
+    muted: boolean;
     onselect: () => void;
+    ontoggleloop: () => void;
+    ontogglemute: () => void;
   }
 
-  const { video, selected, onselect }: Props = $props();
+  const {
+    video,
+    selected,
+    looping,
+    muted,
+    onselect,
+    ontoggleloop,
+    ontogglemute,
+  }: Props = $props();
 
   let button = $state<HTMLButtonElement>();
   let visible = $state(false);
@@ -32,34 +44,69 @@
   $effect(() => {
     if (selected) button?.scrollIntoView({ block: "nearest" });
   });
+
+  // Space is the play/pause shortcut: a focused button would also "click" on it.
+  function then(action: () => void) {
+    return (event: MouseEvent) => {
+      action();
+      (event.currentTarget as HTMLElement).blur();
+    };
+  }
 </script>
 
-<button
-  bind:this={button}
-  class="slide"
-  class:selected
-  onclick={(event) => {
-    onselect();
-    // Space is the play/pause shortcut: a focused button would also "click" on it.
-    event.currentTarget.blur();
-  }}
->
-  <span class="thumb">
-    {#if visible}
-      <!-- Metadata only: the webview decodes the frame at 0.5 s as the thumbnail. -->
-      <video
-        src="{convertFileSrc(video.name, 'lsvideo')}#t=0.5"
-        preload="metadata"
-        muted
-        tabindex="-1"
-      ></video>
-    {/if}
-    <span class="play" aria-hidden="true">▶</span>
-  </span>
-  <span class="name" title={video.name}>{video.name}</span>
-</button>
+<div class="tile">
+  <button
+    bind:this={button}
+    class="slide"
+    class:selected
+    onclick={then(onselect)}
+  >
+    <span class="thumb">
+      {#if visible}
+        <!-- Metadata only: the webview decodes the frame at 0.5 s as the thumbnail. -->
+        <video
+          src="{convertFileSrc(video.name, 'lsvideo')}#t=0.5"
+          preload="metadata"
+          muted
+          tabindex="-1"
+        ></video>
+      {/if}
+      {#if !selected}
+        <span class="play" aria-hidden="true">▶</span>
+      {/if}
+    </span>
+    <span class="name" title={video.name}>{video.name}</span>
+  </button>
+
+  {#if selected}
+    <div class="options">
+      <button
+        class="option"
+        class:on={looping}
+        aria-pressed={looping}
+        title="Rejouer en boucle (L)"
+        onclick={then(ontoggleloop)}
+      >
+        ⟲ Boucle
+      </button>
+      <button
+        class="option"
+        class:on={muted}
+        aria-pressed={muted}
+        title="Couper le son (M)"
+        onclick={then(ontogglemute)}
+      >
+        Muet
+      </button>
+    </div>
+  {/if}
+</div>
 
 <style>
+  .tile {
+    position: relative;
+  }
+
   .slide {
     display: block;
     width: 100%;
@@ -99,6 +146,37 @@
     background: rgba(0, 0, 0, 0.65);
     color: #fff;
     font-size: 0.75rem;
+  }
+
+  /* Over the thumbnail, but a sibling of the slide button: buttons can't nest. */
+  .options {
+    position: absolute;
+    right: 0.4rem;
+    /* The name line (~1.6rem) sits under the thumbnail. */
+    bottom: 2.2rem;
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .option {
+    height: 1.75rem;
+    padding: 0 0.6rem;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    font: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+
+  .option:hover {
+    border-color: var(--muted);
+  }
+
+  .option.on {
+    border-color: var(--accent);
+    background: var(--accent);
   }
 
   .name {

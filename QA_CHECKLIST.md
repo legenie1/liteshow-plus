@@ -55,8 +55,8 @@ Pas de tests e2e en v1 (voir CLAUDE.md). Cette checklist sert de filet avant de 
 - [ ] Espace → pause, Espace → reprise (la fenêtre de contrôle garde le focus)
 - [ ] Cliquer la vidéo en cours → elle repart du début
 - [ ] Flèches → vidéo suivante/précédente, arrêt au bord de la liste
-- [ ] Bouton "Boucle" ou touche "L" → la vidéo se rejoue sans s'arrêter ; L à nouveau → elle s'arrête à la fin. Le mode reste actif en passant à une autre vidéo
-- [ ] Bouton "Muet" ou touche "M" → le son se coupe sans interrompre l'image ; M à nouveau → le son revient. Le mode reste actif en passant à une autre vidéo
+- [ ] Bouton "Boucle" (sur la carte de la vidéo projetée) ou touche "L" → la vidéo se rejoue sans s'arrêter ; L à nouveau → elle s'arrête à la fin. Le mode reste actif en passant à une autre vidéo
+- [ ] Bouton "Muet" (sur la carte de la vidéo projetée) ou touche "M" → le son se coupe sans interrompre l'image ; M à nouveau → le son revient. Le mode reste actif en passant à une autre vidéo
 - [ ] "B" pendant une vidéo → écran noir et le son s'arrête ; "B" à nouveau → image figée, Espace relance
 - [ ] Cliquer une diapo (onglet Diapos) pendant une vidéo → la vidéo disparaît, la diapo s'affiche, plus de son
 - [ ] Touche "T" pendant une vidéo → la diapo du thème remplace la vidéo
