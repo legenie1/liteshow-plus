@@ -9,10 +9,11 @@
     videoMuted,
   } from "$lib/stores/projection";
   import VideoRow from "$lib/components/VideoRow.svelte";
+  import { t } from "$lib/i18n";
 </script>
 
 {#if $videos.length === 0}
-  <p class="empty">Aucune vidéo. Choisis un dossier pour commencer.</p>
+  <p class="empty">{$t("noVideos")}</p>
 {:else}
   <ul class="grid">
     {#each $videos as video (video.name)}

@@ -2,6 +2,7 @@
   import { untrack } from "svelte";
   import { convertFileSrc, invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
+  import { t } from "$lib/i18n";
   import type { ProjectionState } from "$lib/types";
 
   let imagePath = $state<string | null>(null);
@@ -110,7 +111,7 @@
   {#if error}
     <p class="error">{error}</p>
   {:else if videoName && videoError}
-    <p class="error">Vidéo illisible ou format non pris en charge.</p>
+    <p class="error">{$t("videoError")}</p>
   {:else if videoName}
     <!-- Re-created on every selection, so the same video starts over. -->
     {#key videoSerial}

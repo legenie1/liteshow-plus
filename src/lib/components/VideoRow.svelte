@@ -1,5 +1,6 @@
 <script lang="ts">
   import { convertFileSrc } from "@tauri-apps/api/core";
+  import { t } from "$lib/i18n";
   import type { VideoFile } from "$lib/types";
 
   interface Props {
@@ -84,19 +85,19 @@
         class="option"
         class:on={looping}
         aria-pressed={looping}
-        title="Rejouer en boucle (L)"
+        title={$t("loopTitle")}
         onclick={then(ontoggleloop)}
       >
-        ⟲ Boucle
+        ⟲ {$t("loop")}
       </button>
       <button
         class="option"
         class:on={muted}
         aria-pressed={muted}
-        title="Couper le son (M)"
+        title={$t("muteTitle")}
         onclick={then(ontogglemute)}
       >
-        Muet
+        {$t("mute")}
       </button>
     </div>
   {/if}

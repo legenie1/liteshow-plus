@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { enqueue } from "$lib/task-queue";
+  import { t } from "$lib/i18n";
   import type { ImageFile } from "$lib/types";
 
   interface Props {
@@ -70,7 +71,7 @@
     class="star"
     class:on={isTheme}
     aria-pressed={isTheme}
-    title={isTheme ? "Retirer le thème" : "Définir comme thème"}
+    title={isTheme ? $t("themeRemove") : $t("themeSet")}
     onclick={ontheme}
   >
     ★

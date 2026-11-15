@@ -2,6 +2,11 @@
 
 Pas de tests e2e en v1 (voir CLAUDE.md). Cette checklist sert de filet avant de considérer une version utilisable en régie réelle. À dérouler manuellement, avec un vrai second écran/projecteur branché si possible.
 
+## Langue
+
+- [ ] Premier lancement : l'interface est en anglais (les libellés cités plus bas sont ceux de la version française)
+- [ ] Sélecteur EN/FR → tous les textes changent immédiatement (onglets, boutons, écran vide, noms d'écrans, bulles d'aide) ; le choix est retenu après redémarrage
+
 ## Sélection de dossier
 
 - [ ] Choisir un dossier contenant des JPG/PNG/WEBP → la liste se remplit avec les bons noms de fichiers

@@ -18,6 +18,13 @@
     toggleBlackout,
   } from "$lib/stores/projection";
   import { loadTheme, showTheme, themeImage } from "$lib/stores/theme";
+  import {
+    language,
+    languages,
+    setLanguage,
+    t,
+    type Language,
+  } from "$lib/i18n";
   import type { ImageFile, MonitorInfo, VideoFile } from "$lib/types";
 
   let error = $state<string | null>(null);
@@ -26,8 +33,12 @@
   const shownFolder = $derived(onVideos ? $videoFolderPath : $folderPath);
   const shownCount = $derived(
     onVideos
-      ? `${$videos.length} vidéo${$videos.length > 1 ? "s" : ""}`
-      : `${$images.length} images`,
+      ? $t($videos.length === 1 ? "videosOne" : "videosMany", {
+          n: $videos.length,
+        })
+      : $t($images.length === 1 ? "imagesOne" : "imagesMany", {
+          n: $images.length,
+        }),
   );
 
   const themeOnScreen = $derived(
@@ -54,8 +65,8 @@
   }
 
   function monitorLabel(monitor: MonitorInfo): string {
-    const name = monitor.name.replace(/^\\\\\.\\DISPLAY/, "Écran ");
-    const primary = monitor.isPrimary ? " (principal)" : "";
+    const name = monitor.name.replace(/^\\\\\.\\DISPLAY/, `${$t("display")} `);
+    const primary = monitor.isPrimary ? ` (${$t("primary")})` : "";
     return `${name}${primary} · ${monitor.width}×${monitor.height}`;
   }
 
@@ -87,6 +98,12 @@
     }
   }
 
+  function onLanguageChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    setLanguage(select.value as Language);
+    select.blur();
+  }
+
   async function onMonitorChange(event: Event) {
     const select = event.target as HTMLSelectElement;
     const id = select.value;
@@ -107,17 +124,17 @@
       role="tab"
       aria-selected={!onVideos}
       class:active={!onVideos}
-      onclick={() => activeTab.set("slides")}>Diapos</button
+      onclick={() => activeTab.set("slides")}>{$t("tabSlides")}</button
     >
     <button
       role="tab"
       aria-selected={onVideos}
       class:active={onVideos}
-      onclick={() => activeTab.set("videos")}>Vidéos</button
+      onclick={() => activeTab.set("videos")}>{$t("tabVideos")}</button
     >
   </div>
 
-  <button onclick={chooseFolder}>Choisir un dossier</button>
+  <button onclick={chooseFolder}>{$t("chooseFolder")}</button>
 
   {#if shownFolder}
     <span class="folder" title={shownFolder}>
@@ -132,11 +149,21 @@
   <span class="spacer"></span>
 
   <select
-    aria-label="Écran de projection"
+    aria-label={$t("language")}
+    value={$language}
+    onchange={onLanguageChange}
+  >
+    {#each languages as code (code)}
+      <option value={code}>{code.toUpperCase()}</option>
+    {/each}
+  </select>
+
+  <select
+    aria-label={$t("projectionDisplay")}
     value={$selectedMonitorId ?? ""}
     onchange={onMonitorChange}
   >
-    <option value="" disabled>Écran de projection…</option>
+    <option value="" disabled>{$t("projectionDisplayPlaceholder")}</option>
     {#each $monitors as monitor (monitor.id)}
       <option value={monitor.id}>{monitorLabel(monitor)}</option>
     {/each}
@@ -146,12 +173,11 @@
     class="theme-button"
     class:active={themeOnScreen}
     disabled={!$themeImage}
-    title={$themeImage
-      ? "Afficher la diapo du thème"
-      : "Marque une diapo avec son étoile pour la définir comme thème"}
+    title={$themeImage ? $t("themeShow") : $t("themeHint")}
     onclick={showTheme}
   >
-    ★ {themeOnScreen && $resumeImage ? "Revenir" : "Thème"} <kbd>T</kbd>
+    ★ {themeOnScreen && $resumeImage ? $t("themeBack") : $t("theme")}
+    <kbd>T</kbd>
   </button>
 
   <button
@@ -159,7 +185,7 @@
     class:active={$isBlackout}
     onclick={toggleBlackout}
   >
-    Écran noir <kbd>B</kbd>
+    {$t("blackout")} <kbd>B</kbd>
   </button>
 </header>
 

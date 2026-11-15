@@ -3,10 +3,11 @@
   import { currentImage, selectImage } from "$lib/stores/projection";
   import { themeImage, toggleTheme } from "$lib/stores/theme";
   import ThumbnailRow from "$lib/components/ThumbnailRow.svelte";
+  import { t } from "$lib/i18n";
 </script>
 
 {#if $images.length === 0}
-  <p class="empty">Aucune image. Choisis un dossier pour commencer.</p>
+  <p class="empty">{$t("noImages")}</p>
 {:else}
   <ul class="grid">
     {#each $images as image (image.path)}
