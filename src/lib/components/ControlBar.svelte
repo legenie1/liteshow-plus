@@ -30,6 +30,7 @@
   let error = $state<string | null>(null);
 
   const onVideos = $derived($activeTab === "videos");
+  const onPrayer = $derived($activeTab === "prayer");
   const shownFolder = $derived(onVideos ? $videoFolderPath : $folderPath);
   const shownCount = $derived(
     onVideos
@@ -122,8 +123,8 @@
   <div class="tabs" role="tablist">
     <button
       role="tab"
-      aria-selected={!onVideos}
-      class:active={!onVideos}
+      aria-selected={!onVideos && !onPrayer}
+      class:active={!onVideos && !onPrayer}
       onclick={() => activeTab.set("slides")}>{$t("tabSlides")}</button
     >
     <button
@@ -132,11 +133,19 @@
       class:active={onVideos}
       onclick={() => activeTab.set("videos")}>{$t("tabVideos")}</button
     >
+    <button
+      role="tab"
+      aria-selected={onPrayer}
+      class:active={onPrayer}
+      onclick={() => activeTab.set("prayer")}>{$t("tabPrayer")}</button
+    >
   </div>
 
-  <button onclick={chooseFolder}>{$t("chooseFolder")}</button>
+  {#if !onPrayer}
+    <button onclick={chooseFolder}>{$t("chooseFolder")}</button>
+  {/if}
 
-  {#if shownFolder}
+  {#if shownFolder && !onPrayer}
     <span class="folder" title={shownFolder}>
       {folderName(shownFolder)}
       <span class="count">· {shownCount}</span>
@@ -245,8 +254,11 @@
     border-radius: 6px 0 0 6px;
   }
 
-  .tabs button:last-child {
+  .tabs button:not(:first-child) {
     margin-left: -1px;
+  }
+
+  .tabs button:last-child {
     border-radius: 0 6px 6px 0;
   }
 

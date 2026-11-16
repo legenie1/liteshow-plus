@@ -8,9 +8,11 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 import {
   currentImage,
+  currentPrayer,
   currentVideo,
   isBlackout,
   selectImage,
+  selectPrayer,
   selectVideo,
   toggleBlackout,
   toggleVideoLoop,
@@ -24,6 +26,7 @@ beforeEach(() => {
   invokeMock.mockReset();
   currentImage.set(null);
   currentVideo.set(null);
+  currentPrayer.set(null);
   isBlackout.set(false);
   videoLoop.set(false);
   videoMuted.set(false);
@@ -128,5 +131,42 @@ describe("toggleVideoMute", () => {
     await selectVideo("next.mp4");
 
     expect(get(videoMuted)).toBe(true);
+  });
+});
+
+describe("selectPrayer", () => {
+  const prayer = {
+    number: "3",
+    text: "Father, help us",
+    reference: "",
+    verse: "",
+    footer: "",
+  };
+
+  it("invokes set_current_prayer and replaces image and video", async () => {
+    invokeMock.mockResolvedValue(undefined);
+    currentImage.set("/a.jpg");
+    currentVideo.set("intro.mp4");
+    isBlackout.set(true);
+
+    await selectPrayer(prayer);
+
+    expect(invokeMock).toHaveBeenCalledWith("set_current_prayer", { prayer });
+    expect(get(currentPrayer)).toEqual(prayer);
+    expect(get(currentImage)).toBeNull();
+    expect(get(currentVideo)).toBeNull();
+    expect(get(isBlackout)).toBe(false);
+  });
+
+  it("is replaced by an image or a video selection", async () => {
+    invokeMock.mockResolvedValue(undefined);
+
+    currentPrayer.set(prayer);
+    await selectImage("/a.jpg");
+    expect(get(currentPrayer)).toBeNull();
+
+    currentPrayer.set(prayer);
+    await selectVideo("intro.mp4");
+    expect(get(currentPrayer)).toBeNull();
   });
 });

@@ -76,6 +76,14 @@ Un second onglet de la fenêtre de contrôle, à côté de "Diapos", pour les in
 - Lecture par la balise `<video>` du WebView, sans dépendance ajoutée. Vignette = image de la vidéo à 0,5 s, sans ffmpeg.
 - Les fichiers sont servis par un protocole `lsvideo://` avec requêtes Range, limité au dossier choisi (voir CLAUDE.md, Sécurité).
 
+### 5.7 Onglet Prière
+
+Un troisième onglet pour les points de prière donnés à l'oral par le pasteur :
+- Un formulaire : numéro (avec − / +), texte du point de prière, référence et texte du verset (optionnels). Un aperçu en direct montre la diapo telle qu'elle sera projetée.
+- "Projeter" (ou Ctrl+Entrée) affiche le point sur le fond LiteShow : pastille jaune avec le numéro, titre en gras, référence en jaune, verset, et un bas de diapo modifiable (par défaut « My house shall be called a house of prayer », la partie entre `*étoiles*` s'affiche en petit et en jaune ; vide = masqué, retenu d'une session à l'autre). Le texte est du vrai texte posé sur l'image : aucun fichier n'est généré ni retouché.
+- "Point suivant" passe au numéro suivant et vide les champs de texte, prêt pour le point d'après. "Effacer" vide les textes sans changer le numéro.
+- Un texte long rétrécit automatiquement pour tenir dans la diapo. Le brouillon reste en place quand on change d'onglet. Pas de sauvegarde de points de prière.
+
 ## 6. Flux utilisateur (workflow)
 
 1. L'utilisateur ouvre l'application

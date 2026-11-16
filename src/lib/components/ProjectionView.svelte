@@ -3,7 +3,8 @@
   import { convertFileSrc, invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
   import { t } from "$lib/i18n";
-  import type { ProjectionState } from "$lib/types";
+  import PrayerSlide from "$lib/components/PrayerSlide.svelte";
+  import type { PrayerPoint, ProjectionState } from "$lib/types";
 
   let imagePath = $state<string | null>(null);
   let blackout = $state(false);
@@ -12,6 +13,7 @@
   let videoSerial = $state(0);
   let videoLoop = $state(false);
   let videoMuted = $state(false);
+  let prayer = $state<PrayerPoint | null>(null);
   let videoEl = $state<HTMLVideoElement>();
   let error = $state<string | null>(null);
   let videoError = $state(false);
@@ -23,6 +25,7 @@
     videoSerial = state.videoSerial;
     videoLoop = state.videoLoop;
     videoMuted = state.videoMuted;
+    prayer = state.prayer;
     videoError = false;
   }
 
@@ -125,6 +128,10 @@
         onerror={() => (videoError = true)}
       ></video>
     {/key}
+  {:else if prayer && !blackout}
+    <div class="prayer-frame">
+      <PrayerSlide {prayer} />
+    </div>
   {:else if !blackout && imageUrl}
     <img src={imageUrl} alt="" />
   {/if}
@@ -146,6 +153,11 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
+  }
+
+  /* The slide is 16:9: letterboxed on any other screen shape. */
+  .prayer-frame {
+    width: min(100vw, calc(100vh * 16 / 9));
   }
 
   .projection video.hidden {

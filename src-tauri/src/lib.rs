@@ -33,6 +33,7 @@ pub fn run() {
             commands::monitors::open_projection_window,
             commands::projection::get_projection_state,
             commands::projection::set_current_image,
+            commands::projection::set_current_prayer,
             commands::projection::set_current_video,
             commands::projection::toggle_blackout,
             commands::projection::toggle_video_loop,

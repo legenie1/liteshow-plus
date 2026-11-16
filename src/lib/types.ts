@@ -3,6 +3,14 @@ export interface ImageFile {
   path: string;
 }
 
+export interface PrayerPoint {
+  number: string;
+  text: string;
+  reference: string;
+  verse: string;
+  footer: string;
+}
+
 export interface VideoFile {
   name: string;
 }
@@ -23,5 +31,6 @@ export interface ProjectionState {
   videoSerial: number;
   videoLoop: boolean;
   videoMuted: boolean;
+  prayer: PrayerPoint | null;
   blackout: boolean;
 }

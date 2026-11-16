@@ -1,9 +1,11 @@
 import { writable } from "svelte/store";
 import { invoke } from "@tauri-apps/api/core";
+import type { PrayerPoint } from "$lib/types";
 
 export const currentImage = writable<string | null>(null);
 // File name of the projected video: images and videos never show together.
 export const currentVideo = writable<string | null>(null);
+export const currentPrayer = writable<PrayerPoint | null>(null);
 export const isBlackout = writable<boolean>(false);
 export const videoLoop = writable<boolean>(false);
 export const videoMuted = writable<boolean>(false);
@@ -16,6 +18,7 @@ export async function selectImage(path: string | null): Promise<void> {
   // compute the next one, and would otherwise step from a stale position.
   currentImage.set(path);
   currentVideo.set(null);
+  currentPrayer.set(null);
   isBlackout.set(false);
   resumeImage.set(null);
   await invoke("set_current_image", { path });
@@ -24,9 +27,19 @@ export async function selectImage(path: string | null): Promise<void> {
 export async function selectVideo(name: string | null): Promise<void> {
   currentVideo.set(name);
   currentImage.set(null);
+  currentPrayer.set(null);
   isBlackout.set(false);
   resumeImage.set(null);
   await invoke("set_current_video", { name });
+}
+
+export async function selectPrayer(prayer: PrayerPoint | null): Promise<void> {
+  currentPrayer.set(prayer);
+  currentImage.set(null);
+  currentVideo.set(null);
+  isBlackout.set(false);
+  resumeImage.set(null);
+  await invoke("set_current_prayer", { prayer });
 }
 
 export async function toggleVideoPlayback(): Promise<void> {

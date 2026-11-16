@@ -1,6 +1,19 @@
 use std::path::PathBuf;
 use std::sync::Mutex;
 
+use serde::{Deserialize, Serialize};
+
+/// A prayer point typed by the operator, drawn over the built-in background.
+/// Empty strings mean "not provided".
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PrayerPoint {
+    pub number: String,
+    pub text: String,
+    pub reference: String,
+    pub verse: String,
+    pub footer: String,
+}
+
 #[derive(Default)]
 pub struct AppState {
     pub current_image: Mutex<Option<String>>,
@@ -13,6 +26,7 @@ pub struct AppState {
     pub video_folder: Mutex<Option<PathBuf>>,
     /// File name (not path) of the projected video, inside `video_folder`.
     pub current_video: Mutex<Option<String>>,
+    pub current_prayer: Mutex<Option<PrayerPoint>>,
     /// Bumped on every video selection so that picking the same video again restarts it.
     pub video_serial: Mutex<u64>,
 }

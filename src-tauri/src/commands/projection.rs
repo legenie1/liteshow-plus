@@ -2,7 +2,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 
 use crate::error::AppError;
-use crate::state::AppState;
+use crate::state::{AppState, PrayerPoint};
 
 const PROJECTION_CHANGED_EVENT: &str = "projection-changed";
 
@@ -14,6 +14,7 @@ pub struct ProjectionState {
     pub video_serial: u64,
     pub video_loop: bool,
     pub video_muted: bool,
+    pub prayer: Option<PrayerPoint>,
     pub blackout: bool,
 }
 
@@ -27,6 +28,11 @@ fn snapshot(state: &State<AppState>) -> Result<ProjectionState, AppError> {
         .current_video
         .lock()
         .map_err(|_| AppError::new("current_video lock poisoned"))?
+        .clone();
+    let prayer = state
+        .current_prayer
+        .lock()
+        .map_err(|_| AppError::new("current_prayer lock poisoned"))?
         .clone();
     let video_serial = *state
         .video_serial
@@ -50,6 +56,7 @@ fn snapshot(state: &State<AppState>) -> Result<ProjectionState, AppError> {
         video_serial,
         video_loop,
         video_muted,
+        prayer,
         blackout,
     })
 }
@@ -61,7 +68,8 @@ pub fn get_projection_state(state: State<AppState>) -> Result<ProjectionState, A
 
 /// Selecting a new image (or clearing it) also cancels blackout, matching the
 /// operator expectation that clicking a thumbnail always shows something. It
-/// replaces any projected video: the projection shows one thing at a time.
+/// replaces any projected video or prayer point: the projection shows one thing
+/// at a time.
 #[tauri::command]
 pub fn set_current_image(
     app: AppHandle,
@@ -72,6 +80,38 @@ pub fn set_current_image(
         .current_image
         .lock()
         .map_err(|_| AppError::new("current_image lock poisoned"))? = path;
+    *state
+        .current_prayer
+        .lock()
+        .map_err(|_| AppError::new("current_prayer lock poisoned"))? = None;
+    *state
+        .current_video
+        .lock()
+        .map_err(|_| AppError::new("current_video lock poisoned"))? = None;
+    *state
+        .is_blackout
+        .lock()
+        .map_err(|_| AppError::new("is_blackout lock poisoned"))? = false;
+
+    app.emit(PROJECTION_CHANGED_EVENT, snapshot(&state)?)?;
+    Ok(())
+}
+
+/// Projects a prayer point over the built-in background (or clears it with `None`).
+#[tauri::command]
+pub fn set_current_prayer(
+    app: AppHandle,
+    state: State<AppState>,
+    prayer: Option<PrayerPoint>,
+) -> Result<(), AppError> {
+    *state
+        .current_prayer
+        .lock()
+        .map_err(|_| AppError::new("current_prayer lock poisoned"))? = prayer;
+    *state
+        .current_image
+        .lock()
+        .map_err(|_| AppError::new("current_image lock poisoned"))? = None;
     *state
         .current_video
         .lock()
@@ -97,6 +137,10 @@ pub fn set_current_video(
         .current_video
         .lock()
         .map_err(|_| AppError::new("current_video lock poisoned"))? = name;
+    *state
+        .current_prayer
+        .lock()
+        .map_err(|_| AppError::new("current_prayer lock poisoned"))? = None;
     *state
         .current_image
         .lock()

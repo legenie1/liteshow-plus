@@ -69,6 +69,21 @@ Pas de tests e2e en v1 (voir CLAUDE.md). Cette checklist sert de filet avant de 
 - [ ] Un fichier .mp4 corrompu ou un codec non pris en charge affiche "Vidéo illisible…" sans bloquer la suite
 - [ ] Un nom de fichier avec accents, espaces et # (ex. "Intro été #2.mp4") se lit normalement
 
+## Onglet Prière
+
+- [ ] Le champ "Bas de diapo" change la devise en direct ; le texte entre étoiles est petit et jaune ; vidé, la devise disparaît ; la valeur est retenue après redémarrage ; "Point suivant" et "Effacer" la gardent
+
+- [ ] Onglet "Prière" : le formulaire s'affiche, l'aperçu montre le fond et le numéro "1", "Projeter" est grisé tant qu'il n'y a ni texte ni verset
+- [ ] Taper un point de prière avec référence et verset → l'aperçu se met à jour à chaque frappe
+- [ ] "Projeter" ou Ctrl+Entrée → la diapo s'affiche sur l'écran de projection, identique à l'aperçu ; le bouton passe en contour (déjà à l'écran)
+- [ ] Taper les lettres B, T, L, M ou Espace dans les champs de texte n'a aucun effet sur la projection
+- [ ] Un point de prière sans verset ni référence s'affiche seul, en haut, sans trou ni erreur
+- [ ] Un texte très long (6 lignes ou plus) rétrécit pour rester entièrement dans la diapo, sans chevaucher la devise en bas
+- [ ] "Point suivant" → numéro +1, champs vidés, curseur dans le texte ; − / + changent le numéro, jamais en dessous de 1
+- [ ] "B" depuis un autre onglet pendant un point de prière → écran noir ; cliquer une diapo ou une vidéo remplace le point de prière
+- [ ] Changer d'onglet puis revenir → le brouillon est intact
+- [ ] Sur un écran 16:10 ou 4:3, la diapo reste entière (bandes noires), pas rognée
+
 ## Poids et démarrage
 
 - [ ] `pnpm tauri build` produit un exécutable/installeur, taille totale du bundle < 30 Mo

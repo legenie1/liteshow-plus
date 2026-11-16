@@ -18,6 +18,7 @@
   import { stepImagePath, stepVideoName } from "$lib/keyboard-nav";
 
   function step(delta: number) {
+    if (get(activeTab) === "prayer") return;
     if (get(activeTab) === "videos") {
       const nextName = stepVideoName(get(videos), get(currentVideo), delta);
       if (nextName) selectVideo(nextName);
@@ -31,6 +32,7 @@
   function onKeydown(event: KeyboardEvent) {
     if (
       event.target instanceof HTMLInputElement ||
+      event.target instanceof HTMLTextAreaElement ||
       event.target instanceof HTMLSelectElement
     ) {
       return;
