@@ -104,6 +104,15 @@ Un cinquième onglet pour donner le sens d'un mot que le pasteur demande pendant
 - Source : l'API publique `dictionaryapi.dev` (gratuite, sans clé, anglais). **C'est le seul endroit où l'app utilise internet**, uniquement pour le mot tapé. Sans connexion, l'onglet affiche un message clair et le reste de l'app fonctionne normalement.
 - Limites du POC : anglais seulement, pas de mode hors ligne, pas de mémoire des mots déjà cherchés.
 
+### 5.10 Onglet Paroles (POC)
+
+Un sixième onglet pour projeter les paroles d'un chant, diapo par diapo :
+- À gauche, la liste des chants avec un filtre par titre (majuscules et accents ignorés). Au milieu, les diapos du chant empilées dans l'ordre, façon éditeur de chant : chacune a un numéro, une barre de couleur à son label (ocre pour un couplet, bordeaux pour un refrain, vert-bleu pour un pont, gris sinon ; pas de barre si la diapo n'a pas de label) et ses paroles en entier. À droite, l'aperçu ; une fenêtre plus étroite le place au-dessus des diapos.
+- Un clic sur une diapo la projette tout de suite, sur le même fond et avec la même devise que l'onglet Prière : les paroles en gros, « Titre du chant · nom de la diapo » en jaune dessous. Un point rouge dans la barre marque la diapo à l'écran. Les flèches passent à la diapo suivante ou précédente.
+- « Ajouter un chant » ouvre un éditeur à lignes, comme un éditeur de chant : un titre, puis une ligne par diapo avec son « label » (libre : Couplet 1, Refrain, Pont…) et ses paroles. **Ctrl+Entrée crée une nouvelle ligne dessous**, le curseur dans ses paroles ; Entrée dans un label passe aux paroles. Le label est facultatif et libre ; la couleur de la barre se déduit de lui (Chorus ou Refrain, Bridge ou Pont, Verse ou Couplet) et il apparaît dans la ligne jaune de la diapo projetée, après le titre du chant. Chaque ligne se duplique (pour répéter un refrain) ou se supprime. Les chants ajoutés se modifient dans le même éditeur, se suppriment (après un second clic de confirmation) et restent enregistrés sur ce poste d'un lancement à l'autre.
+- L'app peut embarquer des hymnes, **uniquement du domaine public**. La liste est vide pour l'instant : les paroles de chants de louange récents sont protégées, c'est à l'opérateur d'ajouter les siens (avec la licence de son église). Un chant embarqué ne se modifie pas : « Modifier une copie » en crée un qui appartient à l'opérateur.
+- Limites du POC : pas d'import de fichier, pas de recherche dans les paroles, pas de réordonnancement ni de plan de chant (couplet 1, refrain, couplet 2…), pas de synchronisation entre postes.
+
 ## 6. Flux utilisateur (workflow)
 
 1. L'utilisateur ouvre l'application

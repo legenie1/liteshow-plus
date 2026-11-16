@@ -33,7 +33,10 @@
   const onPrayer = $derived($activeTab === "prayer");
   const onBible = $derived($activeTab === "bible");
   const onDictionary = $derived($activeTab === "dictionary");
-  const hasFolder = $derived(!onPrayer && !onBible && !onDictionary);
+  const onLyrics = $derived($activeTab === "lyrics");
+  const hasFolder = $derived(
+    !onPrayer && !onBible && !onDictionary && !onLyrics,
+  );
   const shownFolder = $derived(onVideos ? $videoFolderPath : $folderPath);
   const shownCount = $derived(
     onVideos
@@ -153,6 +156,12 @@
       aria-selected={onDictionary}
       class:active={onDictionary}
       onclick={() => activeTab.set("dictionary")}>{$t("tabDictionary")}</button
+    >
+    <button
+      role="tab"
+      aria-selected={onLyrics}
+      class:active={onLyrics}
+      onclick={() => activeTab.set("lyrics")}>{$t("tabLyrics")}</button
     >
   </div>
 

@@ -148,10 +148,6 @@
       </p>
     {:else if $dictionaryStatus === "error"}
       <p class="message error">{$t("dictionaryError")}</p>
-    {:else if $dictionaryStatus === "found"}
-      <p class="message">{$t("dictionaryPickHint")}</p>
-    {:else}
-      <p class="message">{$t("dictionaryHint")}</p>
     {/if}
 
     {#if $dictionaryLookup && $dictionaryStatus === "found"}

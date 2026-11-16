@@ -18,7 +18,8 @@
   import { stepImagePath, stepVideoName } from "$lib/keyboard-nav";
 
   function step(delta: number) {
-    if (["prayer", "bible", "dictionary"].includes(get(activeTab))) return;
+    if (["prayer", "bible", "dictionary", "lyrics"].includes(get(activeTab)))
+      return;
     if (get(activeTab) === "videos") {
       const nextName = stepVideoName(get(videos), get(currentVideo), delta);
       if (nextName) selectVideo(nextName);

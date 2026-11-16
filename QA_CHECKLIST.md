@@ -121,6 +121,25 @@ Sans internet (couper le Wi-Fi) :
 
 - [ ] Chercher un mot affiche "Impossible de joindre le dictionnaire…" en moins de 10 s, l'app reste utilisable (autres onglets, projection en cours inchangée)
 
+## Onglet Paroles
+
+- [ ] Onglet "Paroles" sans aucun chant : le message invite à utiliser "Ajouter un chant"
+- [ ] "Ajouter un chant" : le curseur est dans le titre ; une ligne vide avec "label" en filigrane dans la barre et les paroles dessous ; "Enregistrer" est grisé tant qu'il manque le titre ou des paroles ; une fois enregistré, le chant apparaît dans la liste, sélectionné, avec "à moi"
+- [ ] Ctrl+Entrée dans les paroles crée une ligne dessous avec le curseur dedans ; Entrée dans un label passe aux paroles ; la barre de la ligne devient bordeaux en tapant "Refrain", ocre avec "Couplet 1", vert-bleu avec "Pont", grise si le label est vide
+- [ ] Le bouton de duplication copie le nom et les paroles dessous ; la croix supprime la ligne (la dernière ligne restante est seulement vidée) ; "Ajouter une diapo" fait comme Ctrl+Entrée
+- [ ] Une ligne dont les paroles sont vides n'est pas enregistrée ; une ligne vide au milieu des paroles d'une même ligne ne coupe pas la diapo en deux
+- [ ] "Modifier" rouvre le chant avec ses lignes, labels vides pour les diapos sans label ; l'enregistrer sans rien changer ne modifie rien à l'affichage
+- [ ] Les diapos du chant s'affichent empilées avec leur numéro, une barre colorée (Couplet 1 ocre, Refrain bordeaux, Pont vert-bleu ; pas de barre sans label) et leurs paroles en entier ; un clic projette la diapo sur l'écran de projection, identique à l'aperçu ; la diapo cliquée a son numéro en bleu et un point rouge sous le numéro ; la ligne jaune de la diapo projetée affiche "Titre · label", ou le titre seul sans label
+- [ ] Une fenêtre étroite (moins de 1000 px) met l'aperçu au-dessus des diapos sans rien rogner ; sous 640 px tout s'empile
+- [ ] En parcourant un chant long avec les flèches, la diapo active reste visible dans la liste
+- [ ] Flèches droite/bas et gauche/haut passent à la diapo suivante/précédente, sans dépasser la première ni la dernière ; elles ne font rien quand on tape dans un champ
+- [ ] Une diapo de 8 lignes ou plus rétrécit pour tenir entièrement, sans chevaucher la devise en bas
+- [ ] "Modifier" change les paroles et le titre ; "Supprimer" demande un second clic, puis le chant disparaît
+- [ ] Fermer et relancer l'app → les chants ajoutés sont toujours là
+- [ ] Le filtre par titre ignore majuscules et accents ; un filtre sans résultat affiche "Aucun chant ne correspond"
+- [ ] B (écran noir) fonctionne depuis cet onglet ; cliquer une image ou une vidéo remplace la diapo de chant
+- [ ] Changer d'onglet puis revenir → le chant et la diapo sélectionnés sont conservés
+
 ## Poids et démarrage
 
 - [ ] `pnpm tauri build` produit un exécutable/installeur, taille totale du bundle < 30 Mo
