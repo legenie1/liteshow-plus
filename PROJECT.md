@@ -84,6 +84,17 @@ Un troisième onglet pour les points de prière donnés à l'oral par le pasteur
 - "Point suivant" passe au numéro suivant et vide les champs de texte, prêt pour le point d'après. "Effacer" vide les textes sans changer le numéro.
 - Un texte long rétrécit automatiquement pour tenir dans la diapo. Le brouillon reste en place quand on change d'onglet. Pas de sauvegarde de points de prière.
 
+### 5.8 Onglet Bible (POC)
+
+Un quatrième onglet pour projeter un verset en anglais et en français :
+- Un champ de référence : « John 3:16 », « Jean 3:16-18 », « 1 Cor 13:4 ». Les noms de livres sont reconnus dans les deux langues, avec ou sans accents, en abréviation ou en préfixe non ambigu. Un verset est obligatoire (un chapitre entier ne tient pas sur une diapo).
+- Sous le champ, trois listes façon EasyWorship : livres (Ancien et Nouveau Testament), chapitres, versets. Un clic écrit dans le champ de référence, qui reste la seule source de vérité ; taper dans le champ surligne et fait défiler les listes. Double-clic sur un verset = projeter, Maj+clic = plage de versets.
+- Trois modes : anglais seul, français seul, ou les deux sur la même diapo (EN puis FR). Le choix est retenu d'une session à l'autre.
+- Entrée ou « Projeter » affiche le passage sur le même fond que l'onglet Prière, avec le même bas de diapo. Aperçu en direct.
+- Texte embarqué dans l'app, hors ligne : KJV (anglais) et Darby (français), deux traductions du domaine public, environ 4,5 Mo chacune, chargées à la première ouverture de l'onglet.
+- Une loupe dans le champ bascule en recherche de mots : on tape quelques mots (3 lettres minimum, accents et majuscules ignorés), la liste montre les versets qui contiennent tous les mots, ceux où les mots se suivent dans l'ordre en premier, les 100 premiers au maximum, avec les mots surlignés. Un clic sur un résultat remplit la référence (aperçu), un double-clic projette, Entrée choisit le premier résultat, Échap revient à la référence. La recherche porte sur les langues du mode choisi.
+- Limites du POC : pas de navigation verset suivant/précédent, pas d'autres traductions. Les deux textes n'ont pas exactement la même numérotation à certains endroits (Darby suit la numérotation hébraïque en Ancien Testament) : un verset absent d'une traduction s'affiche seul dans l'autre langue.
+
 ## 6. Flux utilisateur (workflow)
 
 1. L'utilisateur ouvre l'application
@@ -100,7 +111,7 @@ Pour respecter la promesse de simplicité, l'application ne doit *pas*, du moins
 - Éditer ou modifier les images (pas de retouche, pas de texte superposé)
 - Éditer des vidéos, gérer des playlists vidéo ou jouer de l'audio seul (la lecture de fichiers vidéo locaux, elle, est dans l'onglet "Vidéos")
 - Créer des présentations à partir de zéro
-- Se connecter à des bases de données de chants/Bible
+- Se connecter à des bases de données de chants (la Bible, elle, est embarquée dans l'onglet "Bible", hors ligne, sans base de données)
 - Streamer en ligne
 
 Ces éléments peuvent être des pistes pour des versions futures (voir section 9), mais ne doivent pas alourdir le MVP.

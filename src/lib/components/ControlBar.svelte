@@ -31,6 +31,8 @@
 
   const onVideos = $derived($activeTab === "videos");
   const onPrayer = $derived($activeTab === "prayer");
+  const onBible = $derived($activeTab === "bible");
+  const hasFolder = $derived(!onPrayer && !onBible);
   const shownFolder = $derived(onVideos ? $videoFolderPath : $folderPath);
   const shownCount = $derived(
     onVideos
@@ -123,8 +125,8 @@
   <div class="tabs" role="tablist">
     <button
       role="tab"
-      aria-selected={!onVideos && !onPrayer}
-      class:active={!onVideos && !onPrayer}
+      aria-selected={hasFolder && !onVideos}
+      class:active={hasFolder && !onVideos}
       onclick={() => activeTab.set("slides")}>{$t("tabSlides")}</button
     >
     <button
@@ -139,13 +141,19 @@
       class:active={onPrayer}
       onclick={() => activeTab.set("prayer")}>{$t("tabPrayer")}</button
     >
+    <button
+      role="tab"
+      aria-selected={onBible}
+      class:active={onBible}
+      onclick={() => activeTab.set("bible")}>{$t("tabBible")}</button
+    >
   </div>
 
-  {#if !onPrayer}
+  {#if hasFolder}
     <button onclick={chooseFolder}>{$t("chooseFolder")}</button>
   {/if}
 
-  {#if shownFolder && !onPrayer}
+  {#if shownFolder && hasFolder}
     <span class="folder" title={shownFolder}>
       {folderName(shownFolder)}
       <span class="count">· {shownCount}</span>

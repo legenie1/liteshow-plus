@@ -4,6 +4,7 @@
   import ThumbnailList from "$lib/components/ThumbnailList.svelte";
   import VideoList from "$lib/components/VideoList.svelte";
   import PrayerEditor from "$lib/components/PrayerEditor.svelte";
+  import BibleSearch from "$lib/components/BibleSearch.svelte";
   import { activeTab } from "$lib/stores/videos";
   import ProjectionView from "$lib/components/ProjectionView.svelte";
   import KeyboardShortcuts from "$lib/components/KeyboardShortcuts.svelte";
@@ -20,6 +21,8 @@
       <VideoList />
     {:else if $activeTab === "prayer"}
       <PrayerEditor />
+    {:else if $activeTab === "bible"}
+      <BibleSearch />
     {:else}
       <ThumbnailList />
     {/if}

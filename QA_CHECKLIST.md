@@ -84,6 +84,27 @@ Pas de tests e2e en v1 (voir CLAUDE.md). Cette checklist sert de filet avant de 
 - [ ] Changer d'onglet puis revenir → le brouillon est intact
 - [ ] Sur un écran 16:10 ou 4:3, la diapo reste entière (bandes noires), pas rognée
 
+## Onglet Bible
+
+- [ ] Onglet "Bible" : "Chargement de la Bible…" disparaît en moins d'une seconde, le champ de référence a le focus
+- [ ] "John 3:16", "Jean 3:16" et "jn 3.16" donnent le même verset (en anglais, français, ou les deux selon le mode)
+- [ ] "Jean 3:16-18" affiche les trois versets numérotés ; "1 Cor 13:4-7" et "I John 4:8" sont reconnus
+- [ ] Une référence incomprise ("jo 3:1", "abc") affiche un message, "Projeter" est grisé
+- [ ] Entrée → la diapo s'affiche sur l'écran de projection, identique à l'aperçu ; le bouton passe en contour
+- [ ] Mode "EN + FR" : l'anglais puis le français sur la même diapo, un long passage rétrécit sans chevaucher la devise ; la ligne jaune indique "KJV · Darby"
+- [ ] Le mode choisi est retenu après redémarrage ; le bas de diapo suit celui de l'onglet Prière
+- [ ] Un verset absent d'une traduction (ex. Genèse 31:55) s'affiche seul dans l'autre langue, sans erreur
+- [ ] Changer d'onglet puis revenir → la référence tapée est conservée
+- [ ] Cliquer un livre, un chapitre puis un verset remplit le champ ("Jean 3:16") ; taper "jean 3:16" surligne les trois listes et les fait défiler jusqu'à la sélection
+- [ ] Double-clic sur un verset le projette ; Maj+clic sur un autre verset plus loin crée une plage ("Jean 3:16-18")
+- [ ] Les listes défilent chacune de leur côté (le champ et les boutons restent en haut) ; fenêtre étroite : les deux sections s'empilent
+- [ ] En interface française les livres sont en français, en anglais ils sont en anglais
+
+- [ ] Loupe dans le champ : le champ passe en "Chercher dans le texte" ; taper "aimez vous" (FR) ou "love one another" (EN) liste les versets avec les mots surlignés, "Jean 3:16" à côté de la traduction (KJV / Darby)
+- [ ] La recherche ignore majuscules et accents ("amour", "AMOUR", "éternelle" = "eternelle") ; moins de 3 lettres affiche l'aide, un mot absent affiche "Aucun verset…"
+- [ ] Clic sur un résultat → l'aperçu montre le verset ; double-clic → projeté ; Entrée choisit le premier ; Échap ou la loupe revient à la référence qui contient le verset choisi
+- [ ] Un mot très courant ("the", "le") affiche "100 premiers" sans ralentir la frappe ni figer la fenêtre
+
 ## Poids et démarrage
 
 - [ ] `pnpm tauri build` produit un exécutable/installeur, taille totale du bundle < 30 Mo

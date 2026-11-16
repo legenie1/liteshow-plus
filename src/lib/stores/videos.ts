@@ -1,7 +1,7 @@
 import { writable } from "svelte/store";
 import type { VideoFile } from "$lib/types";
 
-export type Tab = "slides" | "videos" | "prayer";
+export type Tab = "slides" | "videos" | "prayer" | "bible";
 
 export const activeTab = writable<Tab>("slides");
 export const videoFolderPath = writable<string | null>(null);
