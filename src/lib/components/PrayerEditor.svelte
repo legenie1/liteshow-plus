@@ -1,13 +1,15 @@
 <script lang="ts">
   import { currentPrayer, selectPrayer } from "$lib/stores/projection";
-  import { prayerDraft } from "$lib/stores/prayer";
+  import { prayerDraft, prayerHistory } from "$lib/stores/prayer";
   import {
+    addToHistory,
     canProject,
     EMPTY_PRAYER,
     nextPrayer,
     stepNumber,
   } from "$lib/prayer";
   import { t } from "$lib/i18n";
+  import type { PrayerPoint } from "$lib/types";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
 
   let textArea = $state<HTMLTextAreaElement>();
@@ -19,7 +21,16 @@
   );
 
   function project() {
-    if (projectable) selectPrayer({ ...$prayerDraft });
+    if (!projectable) return;
+    const prayer = { ...$prayerDraft };
+    selectPrayer(prayer);
+    prayerHistory.update((h) => addToHistory(h, prayer));
+  }
+
+  // Loads a past point back into the form (to tweak it) and puts it on screen.
+  function reproject(prayer: PrayerPoint) {
+    prayerDraft.set({ ...prayer });
+    project();
   }
 
   function next() {
@@ -111,6 +122,31 @@
       <button onclick={clear}>{$t("prayerClear")}</button>
       <span class="hint">{$t("prayerHint")}</span>
     </div>
+
+    {#if $prayerHistory.length > 0}
+      <div class="field">
+        <span class="history-label">
+          {$t("prayerHistory")}
+          <button class="link" onclick={() => prayerHistory.set([])}
+            >{$t("prayerHistoryClear")}</button
+          >
+        </span>
+        <div class="history">
+          {#each $prayerHistory as past (past.number)}
+            <button
+              class="chip"
+              class:live={$currentPrayer !== null &&
+                $currentPrayer.number === past.number}
+              title={past.text}
+              onclick={() => reproject(past)}
+            >
+              <b>{past.number}</b>
+              {past.text.trim().split("\n")[0].slice(0, 22)}
+            </button>
+          {/each}
+        </div>
+      </div>
+    {/if}
   </div>
 
   <div class="preview">
@@ -226,6 +262,45 @@
   .hint {
     color: var(--muted);
     font-size: 0.75rem;
+  }
+
+  .history-label {
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .history {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    max-height: 6.5rem;
+    overflow-y: auto;
+  }
+
+  .link {
+    height: auto;
+    margin-left: 0.5rem;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-decoration: underline;
+  }
+
+  .chip {
+    height: 1.6rem;
+    padding: 0 0.5rem;
+    font-size: 0.8rem;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .chip.live {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .preview {

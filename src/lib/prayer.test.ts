@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { canProject, nextPrayer, splitFooter, stepNumber } from "./prayer";
+import {
+  addToHistory,
+  canProject,
+  nextPrayer,
+  splitFooter,
+  stepNumber,
+} from "./prayer";
 
 describe("stepNumber", () => {
   it("moves by the delta", () => {
@@ -44,6 +50,43 @@ describe("canProject", () => {
     expect(canProject(empty)).toBe(false);
     expect(canProject({ ...empty, text: "Father" })).toBe(true);
     expect(canProject({ ...empty, verse: "And it shall" })).toBe(true);
+  });
+});
+
+describe("addToHistory", () => {
+  const point = (number: string, text: string) => ({
+    number,
+    text,
+    reference: "",
+    verse: "",
+    footer: "",
+  });
+
+  it("puts the newest first", () => {
+    const history = addToHistory([point("1", "a")], point("2", "b"));
+    expect(history.map((p) => p.number)).toEqual(["2", "1"]);
+  });
+
+  it("moves a re-projected point to the top instead of duplicating it", () => {
+    const history = addToHistory(
+      [point("2", "b"), point("1", "a")],
+      point("1", "a"),
+    );
+    expect(history.map((p) => p.number)).toEqual(["1", "2"]);
+  });
+
+  it("replaces the entry with the same number, even when reworded", () => {
+    const history = addToHistory([point("1", "a")], point("1", "a, edited"));
+    expect(history).toHaveLength(1);
+    expect(history[0].text).toBe("a, edited");
+  });
+
+  it("keeps only the most recent points", () => {
+    let history: ReturnType<typeof point>[] = [];
+    for (let n = 1; n <= 20; n++)
+      history = addToHistory(history, point(`${n}`, "x"));
+    expect(history).toHaveLength(12);
+    expect(history[0].number).toBe("20");
   });
 });
 

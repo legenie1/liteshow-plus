@@ -42,6 +42,23 @@ export function nextPrayer(prayer: PrayerPoint): PrayerPoint {
   };
 }
 
+export const HISTORY_LIMIT = 12;
+
+/**
+ * Most recent first, one entry per number: a number identifies a point during a
+ * service, so projecting it again (even reworded) replaces the old entry.
+ */
+export function addToHistory(
+  history: PrayerPoint[],
+  prayer: PrayerPoint,
+): PrayerPoint[] {
+  const number = prayer.number.trim();
+  return [prayer, ...history.filter((p) => p.number.trim() !== number)].slice(
+    0,
+    HISTORY_LIMIT,
+  );
+}
+
 /** A point worth projecting has at least a text or a verse. */
 export function canProject(prayer: PrayerPoint): boolean {
   return prayer.text.trim() !== "" || prayer.verse.trim() !== "";

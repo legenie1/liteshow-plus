@@ -19,6 +19,10 @@ export const prayerDraft = writable<PrayerPoint>({
   footer: readFooter(),
 });
 
+// Points already projected, so the operator can go back to one after "Next point".
+// Session only: a service's points mean nothing the week after.
+export const prayerHistory = writable<PrayerPoint[]>([]);
+
 // The footer rarely changes: remember it across sessions.
 prayerDraft.subscribe(({ footer }) => {
   try {
