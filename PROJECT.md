@@ -95,6 +95,15 @@ Un quatrième onglet pour projeter un verset en anglais et en français :
 - Une loupe dans le champ bascule en recherche de mots : on tape quelques mots (3 lettres minimum, accents et majuscules ignorés), la liste montre les versets qui contiennent tous les mots, ceux où les mots se suivent dans l'ordre en premier, les 100 premiers au maximum, avec les mots surlignés. Un clic sur un résultat remplit la référence (aperçu), un double-clic projette, Entrée choisit le premier résultat, Échap revient à la référence. La recherche porte sur les langues du mode choisi.
 - Limites du POC : pas de navigation verset suivant/précédent, pas d'autres traductions. Les deux textes n'ont pas exactement la même numérotation à certains endroits (Darby suit la numérotation hébraïque en Ancien Testament) : un verset absent d'une traduction s'affiche seul dans l'autre langue.
 
+### 5.9 Onglet Dictionnaire (POC)
+
+Un cinquième onglet pour donner le sens d'un mot que le pasteur demande pendant la prédication :
+- On tape un mot anglais, Entrée le cherche, Entrée une seconde fois le projette. Une loupe dans le champ fait aussi la recherche.
+- La liste montre toutes les définitions (avec la nature du mot : nom, verbe…). La première est choisie d'office ; un clic sur une définition la met ou la retire de la diapo. L'aperçu à droite suit.
+- La diapo reprend le fond et la devise de l'onglet Prière : le mot en titre, sa prononciation en jaune, les définitions choisies dessous.
+- Source : l'API publique `dictionaryapi.dev` (gratuite, sans clé, anglais). **C'est le seul endroit où l'app utilise internet**, uniquement pour le mot tapé. Sans connexion, l'onglet affiche un message clair et le reste de l'app fonctionne normalement.
+- Limites du POC : anglais seulement, pas de mode hors ligne, pas de mémoire des mots déjà cherchés.
+
 ## 6. Flux utilisateur (workflow)
 
 1. L'utilisateur ouvre l'application
@@ -112,7 +121,7 @@ Pour respecter la promesse de simplicité, l'application ne doit *pas*, du moins
 - Éditer des vidéos, gérer des playlists vidéo ou jouer de l'audio seul (la lecture de fichiers vidéo locaux, elle, est dans l'onglet "Vidéos")
 - Créer des présentations à partir de zéro
 - Se connecter à des bases de données de chants (la Bible, elle, est embarquée dans l'onglet "Bible", hors ligne, sans base de données)
-- Streamer en ligne
+- Streamer en ligne (le seul appel réseau est la recherche d'un mot dans l'onglet "Dictionnaire")
 
 Ces éléments peuvent être des pistes pour des versions futures (voir section 9), mais ne doivent pas alourdir le MVP.
 

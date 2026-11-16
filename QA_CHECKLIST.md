@@ -105,6 +105,22 @@ Pas de tests e2e en v1 (voir CLAUDE.md). Cette checklist sert de filet avant de 
 - [ ] Clic sur un résultat → l'aperçu montre le verset ; double-clic → projeté ; Entrée choisit le premier ; Échap ou la loupe revient à la référence qui contient le verset choisi
 - [ ] Un mot très courant ("the", "le") affiche "100 premiers" sans ralentir la frappe ni figer la fenêtre
 
+## Onglet Dictionnaire
+
+Avec internet :
+
+- [ ] Taper "grace" puis Entrée → les définitions s'affichent en moins de 2 s, la première est surlignée, l'aperçu montre le mot, sa prononciation en jaune et la définition
+- [ ] Entrée une seconde fois → la diapo est projetée, identique à l'aperçu ; le bouton passe en contour
+- [ ] Cliquer d'autres définitions les ajoute à l'aperçu (avec "(noun)", "(verb)"), recliquer les retire ; sans aucune définition choisie, "Projeter" est grisé
+- [ ] Un mot composé ("born again") est cherché correctement ; majuscules et espaces en trop ne gênent pas
+- [ ] Un mot inconnu ("zzqxj") affiche "Aucune définition trouvée", sans erreur ni ancien résultat
+- [ ] Changer d'onglet puis revenir → le mot et les définitions choisies sont conservés
+- [ ] Les touches B, T, L, M, Espace tapées dans le champ n'agissent pas sur la projection
+
+Sans internet (couper le Wi-Fi) :
+
+- [ ] Chercher un mot affiche "Impossible de joindre le dictionnaire…" en moins de 10 s, l'app reste utilisable (autres onglets, projection en cours inchangée)
+
 ## Poids et démarrage
 
 - [ ] `pnpm tauri build` produit un exécutable/installeur, taille totale du bundle < 30 Mo

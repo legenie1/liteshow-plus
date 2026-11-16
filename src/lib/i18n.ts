@@ -9,6 +9,7 @@ const en = {
   tabVideos: "Videos",
   tabPrayer: "Prayer",
   tabBible: "Bible",
+  tabDictionary: "Dictionary",
   chooseFolder: "Choose a folder",
   imagesOne: "{n} image",
   imagesMany: "{n} images",
@@ -57,6 +58,17 @@ const en = {
     "{n} verses found. Click to preview, double-click to project.",
   bibleSearchMany:
     "{n} verses found, showing the first {max}. Add a word to narrow it down.",
+  dictionaryWord: "Word",
+  dictionaryPlaceholder: "e.g. grace",
+  dictionarySearch: "Look up this word",
+  dictionaryHint:
+    "Type a word and press Enter. Press Enter again to project it. Needs an internet connection.",
+  dictionaryLoading: "Looking it up…",
+  dictionaryNotFound: 'No definition found for "{word}".',
+  dictionaryError:
+    "Can't reach the dictionary. Check the internet connection and try again.",
+  dictionaryPickHint:
+    "Click definitions to choose which ones go on the slide. Enter or Project to show it.",
   bibleChapters: "Chapters",
   bibleVerses: "Verses",
   bibleOldTestament: "Old Testament",
@@ -81,6 +93,7 @@ const fr: Record<MessageKey, string> = {
   tabVideos: "Vidéos",
   tabPrayer: "Prière",
   tabBible: "Bible",
+  tabDictionary: "Dictionnaire",
   chooseFolder: "Choisir un dossier",
   imagesOne: "{n} image",
   imagesMany: "{n} images",
@@ -129,6 +142,17 @@ const fr: Record<MessageKey, string> = {
     "{n} versets trouvés. Clic pour l'aperçu, double-clic pour projeter.",
   bibleSearchMany:
     "{n} versets trouvés, les {max} premiers sont affichés. Ajoute un mot pour affiner.",
+  dictionaryWord: "Mot (en anglais)",
+  dictionaryPlaceholder: "ex. grace",
+  dictionarySearch: "Chercher ce mot",
+  dictionaryHint:
+    "Tape un mot anglais et appuie sur Entrée. Entrée une seconde fois le projette. Demande une connexion internet.",
+  dictionaryLoading: "Recherche en cours…",
+  dictionaryNotFound: "Aucune définition trouvée pour « {word} ».",
+  dictionaryError:
+    "Impossible de joindre le dictionnaire. Vérifie la connexion internet et réessaie.",
+  dictionaryPickHint:
+    "Clique sur les définitions à mettre sur la diapo. Entrée ou Projeter pour l'afficher.",
   bibleChapters: "Chapitres",
   bibleVerses: "Versets",
   bibleOldTestament: "Ancien Testament",
