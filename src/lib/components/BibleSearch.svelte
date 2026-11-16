@@ -11,7 +11,7 @@
   import {
     BOOKS,
     buildPassage,
-    completeOnSpace,
+    completeOnKey,
     EN_VERSION,
     formatReference,
     FR_VERSION,
@@ -187,17 +187,18 @@
       project();
       return;
     }
-    // Space moves on to the next part: book, then chapter, then verse. Only when
-    // the caret is at the end, so editing the middle of the text stays normal.
+    // Space or Tab moves on to the next part: book, then chapter, then verse. Only
+    // when the caret is at the end, so editing the middle of the text stays
+    // normal, and a Tab with nothing left to complete moves the focus on.
     if (
-      event.key === " " &&
       !event.ctrlKey &&
       !event.metaKey &&
-      !event.altKey
+      !event.altKey &&
+      !(event.shiftKey && event.key === "Tab")
     ) {
       const typed = $bibleQuery;
       if (input?.selectionStart !== typed.length) return;
-      const completed = completeOnSpace(typed, $language);
+      const completed = completeOnKey(typed, event.key, $language);
       if (completed !== null) {
         event.preventDefault();
         bibleQuery.set(completed);

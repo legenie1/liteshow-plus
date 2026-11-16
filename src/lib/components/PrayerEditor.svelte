@@ -1,5 +1,14 @@
 <script lang="ts">
+  import { onMount, untrack } from "svelte";
+  import { get } from "svelte/store";
   import { currentPrayer, selectPrayer } from "$lib/stores/projection";
+  import { bibleMode, loadBible, type BibleTexts } from "$lib/stores/bible";
+  import {
+    completeOnKey,
+    parseLooseReference,
+    scriptureFor,
+    type BibleMode,
+  } from "$lib/bible";
   import { prayerDraft, prayerHistory } from "$lib/stores/prayer";
   import {
     addToHistory,
@@ -8,11 +17,110 @@
     nextPrayer,
     stepNumber,
   } from "$lib/prayer";
-  import { t } from "$lib/i18n";
+  import { language, t } from "$lib/i18n";
   import type { PrayerPoint } from "$lib/types";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
 
   let textArea = $state<HTMLTextAreaElement>();
+
+  // --- Verse from the Bible -------------------------------------------------
+  // Typing a reference fills in the verse text and tidies the reference line.
+  // Both only follow while the operator hasn't taken over: a verse or a reference
+  // they changed by hand is left alone (the button below can still refill it).
+  let texts = $state<BibleTexts | null>(null);
+  let autoVerse = "";
+  let autoReference = "";
+
+  // The Bible files are big: fetched the first time they are needed.
+  function ensureBible() {
+    if (texts) return;
+    loadBible().then(
+      (loaded) => (texts = loaded),
+      () => {
+        // Without the files the fields simply stay manual.
+      },
+    );
+  }
+
+  onMount(() => {
+    if ($prayerDraft.reference.trim() !== "") ensureBible();
+  });
+
+  const reference = $derived($prayerDraft.reference);
+  const parsed = $derived(parseLooseReference(reference));
+  const scripture = $derived(
+    parsed && texts ? scriptureFor(parsed, $bibleMode, texts) : null,
+  );
+  const missing = $derived(parsed !== null && texts !== null && !scripture);
+  const canFill = $derived(
+    scripture !== null && $prayerDraft.verse !== scripture.verse,
+  );
+
+  $effect(() => {
+    const found = scripture;
+    if (!found) return;
+    untrack(() => {
+      const draft = get(prayerDraft);
+      const verse =
+        draft.verse.trim() === "" || draft.verse === autoVerse
+          ? found.verse
+          : draft.verse;
+      // A reference the operator is still typing is not rewritten; one we wrote
+      // ourselves follows the language choice.
+      const reference =
+        draft.reference === autoReference ? found.reference : draft.reference;
+      autoVerse = found.verse;
+      autoReference =
+        reference === found.reference ? found.reference : autoReference;
+      if (verse !== draft.verse || reference !== draft.reference) {
+        prayerDraft.update((p) => ({ ...p, verse, reference }));
+      }
+    });
+  });
+
+  function fillVerse() {
+    if (!scripture) return;
+    const { verse } = scripture;
+    autoVerse = verse;
+    prayerDraft.update((p) => ({ ...p, verse }));
+  }
+
+  // Once the field is left, "jn 3 16" becomes "John 3:16 (KJV)".
+  function tidyReference() {
+    if (!scripture || $prayerDraft.reference === scripture.reference) return;
+    const tidy = scripture.reference;
+    autoReference = tidy;
+    prayerDraft.update((p) => ({ ...p, reference: tidy }));
+  }
+
+  // Space or Tab moves on to the next part, as in the Bible tab: "john" Space,
+  // "3" Space. Tab with nothing left to complete moves to the next field as usual.
+  function onReferenceKeydown(
+    event: KeyboardEvent & { currentTarget: HTMLInputElement },
+  ) {
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+    if (event.shiftKey && event.key === "Tab") {
+      return;
+    }
+    const typed = $prayerDraft.reference;
+    if (event.currentTarget.selectionStart !== typed.length) return;
+    const completed = completeOnKey(typed, event.key, $language);
+    if (completed !== null) {
+      event.preventDefault();
+      prayerDraft.update((p) => ({ ...p, reference: completed }));
+    }
+  }
+
+  const modes: {
+    mode: BibleMode;
+    label: "bibleEn" | "bibleFr" | "bibleBoth";
+  }[] = [
+    { mode: "en", label: "bibleEn" },
+    { mode: "fr", label: "bibleFr" },
+    { mode: "both", label: "bibleBoth" },
+  ];
 
   const projectable = $derived(canProject($prayerDraft));
   const onScreen = $derived(
@@ -96,12 +204,42 @@
     </div>
 
     <div class="field">
-      <label for="prayer-reference">{$t("prayerReference")}</label>
-      <input id="prayer-reference" bind:value={$prayerDraft.reference} />
+      <div class="field-head">
+        <label for="prayer-reference">{$t("prayerReference")}</label>
+        <div class="modes" role="group" aria-label={$t("bibleLanguages")}>
+          {#each modes as { mode, label } (mode)}
+            <button
+              class:active={$bibleMode === mode}
+              aria-pressed={$bibleMode === mode}
+              onclick={() => bibleMode.set(mode)}>{$t(label)}</button
+            >
+          {/each}
+        </div>
+      </div>
+      <input
+        id="prayer-reference"
+        placeholder={$t("prayerReferencePlaceholder")}
+        autocomplete="off"
+        spellcheck="false"
+        bind:value={$prayerDraft.reference}
+        onfocus={ensureBible}
+        onblur={tidyReference}
+        onkeydown={onReferenceKeydown}
+      />
+      {#if missing}
+        <span class="hint">{$t("prayerReferenceMissing")}</span>
+      {/if}
     </div>
 
     <div class="field">
-      <label for="prayer-verse">{$t("prayerVerse")}</label>
+      <div class="field-head">
+        <label for="prayer-verse">{$t("prayerVerse")}</label>
+        {#if canFill}
+          <button class="link" onclick={fillVerse}
+            >{$t("prayerFillVerse")}</button
+          >
+        {/if}
+      </div>
       <textarea id="prayer-verse" rows="4" bind:value={$prayerDraft.verse}
       ></textarea>
     </div>
@@ -262,6 +400,42 @@
   .hint {
     color: var(--muted);
     font-size: 0.75rem;
+  }
+
+  .field-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .modes {
+    display: flex;
+  }
+
+  .modes button {
+    height: 1.5rem;
+    padding: 0 0.5rem;
+    border-radius: 0;
+    font-size: 0.75rem;
+  }
+
+  .modes button:first-child {
+    border-radius: 6px 0 0 6px;
+  }
+
+  .modes button:not(:first-child) {
+    margin-left: -1px;
+  }
+
+  .modes button:last-child {
+    border-radius: 0 6px 6px 0;
+  }
+
+  .modes button.active {
+    position: relative;
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .history-label {

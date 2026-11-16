@@ -204,6 +204,21 @@ export function completeOnSpace(
   return null;
 }
 
+/**
+ * Space and Tab both move on to the next part of a reference. A Tab that would
+ * change nothing (nothing left to complete) returns null, so it keeps its usual
+ * job of moving the focus to the next field.
+ */
+export function completeOnKey(
+  input: string,
+  key: string,
+  language: "en" | "fr",
+): string | null {
+  if (key !== " " && key !== "Tab") return null;
+  const completed = completeOnSpace(input, language);
+  return key === "Tab" && completed === input ? null : completed;
+}
+
 /** The verses of a reference, or null when this translation doesn't have them. */
 export function getVerses(text: BibleText, ref: Reference): string[] | null {
   const chapter = text[ref.book]?.[ref.chapter - 1];
@@ -329,6 +344,48 @@ export function highlightParts(
     else parts.push({ text: char, match: marked[i] });
   });
   return parts;
+}
+
+/**
+ * Reads a reference as it may sit in a prayer slide's reference field, where it
+ * carries the translations' names: "John 3:16 (KJV) · Jean 3:16 (Darby)" reads as
+ * John 3:16.
+ */
+export function parseLooseReference(input: string): Reference | null {
+  const first = input.split("·")[0].replace(/\([^)]*\)\s*$/, "");
+  return parseReference(first);
+}
+
+/**
+ * The reference line and the verse text of a passage, to fill in a prayer point
+ * from the Bible: "John 3:16 (KJV)" and its text, in the language(s) of `mode`.
+ * Null when neither translation has the verse.
+ */
+export function scriptureFor(
+  ref: Reference,
+  mode: BibleMode,
+  texts: { en: BibleText; fr: BibleText },
+): { reference: string; verse: string } | null {
+  const parts: { reference: string; verse: string }[] = [];
+  const en = mode !== "fr" ? getVerses(texts.en, ref) : null;
+  const fr = mode !== "en" ? getVerses(texts.fr, ref) : null;
+  if (en) {
+    parts.push({
+      reference: `${formatReference(ref, "en")} (${EN_VERSION})`,
+      verse: joinVerses(en, ref.from),
+    });
+  }
+  if (fr) {
+    parts.push({
+      reference: `${formatReference(ref, "fr")} (${FR_VERSION})`,
+      verse: joinVerses(fr, ref.from),
+    });
+  }
+  if (parts.length === 0) return null;
+  return {
+    reference: parts.map((p) => p.reference).join(" · "),
+    verse: parts.map((p) => p.verse).join("\n\n"),
+  };
 }
 
 /**

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isValidSong,
   lyricsToRows,
+  matchesLyrics,
   matchesTitle,
   newSongId,
   parseLyrics,
@@ -138,6 +139,21 @@ describe("matchesTitle", () => {
 
   it("matches everything when the filter is empty", () => {
     expect(matchesTitle(song("Anything"), "  ")).toBe(true);
+  });
+});
+
+describe("matchesLyrics", () => {
+  const withLyrics = (lyrics: string): Song => ({ ...song("T"), lyrics });
+
+  it("finds words anywhere in the lyrics, ignoring case and accents", () => {
+    const s = withLyrics("Grâce infinie\n\nLe Seigneur règne");
+    expect(matchesLyrics(s, "GRACE")).toBe(true);
+    expect(matchesLyrics(s, "seigneur regne")).toBe(true);
+    expect(matchesLyrics(s, "seigneur absent")).toBe(false);
+  });
+
+  it("matches everything when the filter is empty", () => {
+    expect(matchesLyrics(withLyrics("x"), " ")).toBe(true);
   });
 });
 

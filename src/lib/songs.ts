@@ -117,6 +117,22 @@ export function matchesTitle(song: Song, filter: string): boolean {
     .every((word) => title.includes(word));
 }
 
+// Folding every song on each keystroke would be wasteful: do it once per song.
+const foldedLyrics = new WeakMap<Song, string>();
+
+/** Lyrics filter: every typed word must appear somewhere in the words of the song. */
+export function matchesLyrics(song: Song, filter: string): boolean {
+  let lyrics = foldedLyrics.get(song);
+  if (lyrics === undefined) {
+    lyrics = fold(song.lyrics);
+    foldedLyrics.set(song, lyrics);
+  }
+  return fold(filter)
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((word) => lyrics.includes(word));
+}
+
 /** Alphabetical, ignoring case and accents. */
 export function sortSongs(songs: Song[]): Song[] {
   return [...songs].sort((a, b) => fold(a.title).localeCompare(fold(b.title)));

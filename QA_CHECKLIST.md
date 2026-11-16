@@ -75,6 +75,10 @@ Pas de tests e2e en v1 (voir CLAUDE.md). Cette checklist sert de filet avant de 
 
 - [ ] Onglet "Prière" : le formulaire s'affiche, l'aperçu montre le fond et le numéro "1", "Projeter" est grisé tant qu'il n'y a ni texte ni verset
 - [ ] Taper un point de prière avec référence et verset → l'aperçu se met à jour à chaque frappe
+- [ ] Taper "jean" Espace "3" Espace "16" dans la référence → "Jean 3:16" se forme (Tab donne le même résultat que Espace ; un Tab sans rien à compléter, ou Maj+Tab, déplace le focus comme d'habitude ; même comportement dans le champ de l'onglet Bible), le verset se remplit tout seul dans la langue choisie (EN / FR / EN + FR) ; en quittant le champ la référence devient "Jean 3:16 (Darby)" (ou "John 3:16 (KJV)")
+- [ ] Changer EN / FR / EN + FR met à jour le verset et la référence ; un verset modifié à la main n'est plus remplacé, et "Remplir depuis la Bible" le recharge
+- [ ] Une référence inventée ou absente de la traduction ("Genèse 31:55" en français) affiche "Ce verset n'existe pas…" sans effacer ce qui est écrit ; on peut taper le verset soi-même
+- [ ] Une plage "Jean 3:16-18" remplit les trois versets numérotés ; un verset long rétrécit sans chevaucher la devise
 - [ ] "Projeter" ou Ctrl+Entrée → la diapo s'affiche sur l'écran de projection, identique à l'aperçu ; le bouton passe en contour (déjà à l'écran)
 - [ ] Taper les lettres B, T, L, M ou Espace dans les champs de texte n'a aucun effet sur la projection
 - [ ] Un point de prière sans verset ni référence s'affiche seul, en haut, sans trou ni erreur
@@ -135,6 +139,10 @@ Sans internet (couper le Wi-Fi) :
 - [ ] Flèches droite/bas et gauche/haut passent à la diapo suivante/précédente, sans dépasser la première ni la dernière ; elles ne font rien quand on tape dans un champ
 - [ ] Une diapo de 8 lignes ou plus rétrécit pour tenir entièrement, sans chevaucher la devise en bas
 - [ ] "Modifier" change les paroles et le titre ; "Supprimer" demande un second clic, puis le chant disparaît
+- [ ] Avec `src/assets/songs/english.json` : la liste montre les 305 chants (titres propres : "Rose of Sharon", "1234 Jesus"), sans erreur ; sans ce fichier, l'onglet fonctionne comme avant
+- [ ] Un chant de la bibliothèque s'ouvre en diapos de 4 lignes, sans barre de label ; "Modifier une copie" l'ouvre dans l'éditeur, l'enregistrer crée un chant "à moi" sans toucher à l'original
+- [ ] Taper une ligne connue d'un chant (pas son titre) dans le filtre le retrouve ; un titre trouvé passe avant les chants trouvés seulement par leurs paroles
+- [ ] Un fichier JSON invalide dans `src/assets/songs/` affiche "La bibliothèque de chants n'a pas pu être chargée" sans bloquer le reste
 - [ ] Fermer et relancer l'app → les chants ajoutés sont toujours là
 - [ ] Le filtre par titre ignore majuscules et accents ; un filtre sans résultat affiche "Aucun chant ne correspond"
 - [ ] B (écran noir) fonctionne depuis cet onglet ; cliquer une image ou une vidéo remplace la diapo de chant

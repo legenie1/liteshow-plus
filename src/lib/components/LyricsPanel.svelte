@@ -1,12 +1,18 @@
 <script lang="ts">
-  import { tick } from "svelte";
+  import { onMount, tick } from "svelte";
   import { currentPrayer, selectPrayer } from "$lib/stores/projection";
   import { prayerDraft } from "$lib/stores/prayer";
   import { lyricsSection, lyricsSongId, userSongs } from "$lib/stores/songs";
   import { BUILT_IN_SONGS } from "$lib/hymns";
   import {
+    libraryFailed,
+    librarySongList,
+    loadLibrary,
+  } from "$lib/stores/library";
+  import {
     isValidSong,
     lyricsToRows,
+    matchesLyrics,
     matchesTitle,
     newSongId,
     parseLyrics,
@@ -46,8 +52,27 @@
   let slideList = $state<HTMLDivElement>();
   let editorRows = $state<HTMLDivElement>();
 
-  const songs = $derived(sortSongs([...BUILT_IN_SONGS, ...$userSongs]));
-  const shown = $derived(songs.filter((song) => matchesTitle(song, filter)));
+  // The library is only read once the tab is opened: it is a few hundred songs.
+  onMount(() => {
+    loadLibrary();
+  });
+
+  const songs = $derived(
+    sortSongs([...BUILT_IN_SONGS, ...$librarySongList, ...$userSongs]),
+  );
+  // Titles first, then the songs that only have the words in their lyrics: the
+  // library's titles come from file names, so a line one remembers finds the song.
+  const shown = $derived(
+    filter.trim() === ""
+      ? songs
+      : [
+          ...songs.filter((song) => matchesTitle(song, filter)),
+          ...songs.filter(
+            (song) =>
+              !matchesTitle(song, filter) && matchesLyrics(song, filter),
+          ),
+        ],
+  );
   const selected = $derived(songs.find((s) => s.id === $lyricsSongId) ?? null);
   const sections = $derived(selected ? parseLyrics(selected.lyrics) : []);
   const passages = $derived(
@@ -213,6 +238,10 @@
     </div>
 
     <button class="add" onclick={startNew}>{$t("lyricsAdd")}</button>
+
+    {#if $libraryFailed}
+      <p class="message error">{$t("lyricsLibraryError")}</p>
+    {/if}
 
     <div class="songs" role="listbox" aria-label={$t("tabLyrics")}>
       {#each shown as song (song.id)}

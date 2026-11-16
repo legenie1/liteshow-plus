@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
   buildPassage,
+  completeOnKey,
   completeOnSpace,
   findBook,
   formatReference,
   getVerses,
   highlightParts,
   normalize,
+  parseLooseReference,
   parsePartial,
   parseReference,
+  scriptureFor,
   searchVerses,
   type BibleText,
 } from "./bible";
@@ -216,6 +219,31 @@ describe("highlightParts", () => {
   });
 });
 
+describe("completeOnKey", () => {
+  it("does with Tab what it does with Space", () => {
+    expect(completeOnKey("john", "Tab", "en")).toBe("John ");
+    expect(completeOnKey("john", " ", "en")).toBe("John ");
+    expect(completeOnKey("John 3", "Tab", "en")).toBe("John 3:");
+  });
+
+  it("lets Tab go on to the next field when there is nothing to complete", () => {
+    expect(completeOnKey("John 3:16", "Tab", "en")).toBeNull();
+    expect(completeOnKey("John ", "Tab", "en")).toBeNull();
+    expect(completeOnKey("John 3:", "Tab", "en")).toBeNull();
+    expect(completeOnKey("", "Tab", "en")).toBeNull();
+    expect(completeOnKey("jo", "Tab", "en")).toBeNull();
+  });
+
+  it("still swallows a second Space, which Tab must not", () => {
+    expect(completeOnKey("John 3:", " ", "en")).toBe("John 3:");
+  });
+
+  it("ignores every other key", () => {
+    expect(completeOnKey("john", "a", "en")).toBeNull();
+    expect(completeOnKey("john", "Enter", "en")).toBeNull();
+  });
+});
+
 const text: BibleText = [];
 text[JOHN] = [[], [], ["v1", "v2", "v3"]];
 
@@ -294,6 +322,64 @@ describe("buildPassage", () => {
     texts.en[17] = [["a"]];
     texts.fr[17] = [["b"]];
     expect(buildPassage(job, "both", texts, "")?.text).toBe("Job 1:1");
+  });
+});
+
+describe("parseLooseReference", () => {
+  it("reads a reference followed by the translations' names", () => {
+    const john316 = { book: JOHN, chapter: 3, from: 16, to: 16 };
+    expect(parseLooseReference("John 3:16")).toEqual(john316);
+    expect(parseLooseReference("John 3:16 (KJV)")).toEqual(john316);
+    expect(parseLooseReference("John 3:16 (KJV) · Jean 3:16 (Darby)")).toEqual(
+      john316,
+    );
+  });
+
+  it("keeps refusing what isn't a reference", () => {
+    expect(parseLooseReference("")).toBeNull();
+    expect(parseLooseReference("John (KJV)")).toBeNull();
+    expect(parseLooseReference("Nothing 3:16 (KJV)")).toBeNull();
+  });
+});
+
+describe("scriptureFor", () => {
+  const texts = { en: [] as BibleText, fr: [] as BibleText };
+  texts.en[JOHN] = [[], [], ["en1", "en2"]];
+  texts.fr[JOHN] = [[], [], ["fr1"]];
+  const ref = { book: JOHN, chapter: 3, from: 1, to: 1 };
+
+  it("gives the reference line and the verse of each language", () => {
+    expect(scriptureFor(ref, "en", texts)).toEqual({
+      reference: "John 3:1 (KJV)",
+      verse: "en1",
+    });
+    expect(scriptureFor(ref, "fr", texts)).toEqual({
+      reference: "Jean 3:1 (Darby)",
+      verse: "fr1",
+    });
+  });
+
+  it("stacks both languages, English first", () => {
+    expect(scriptureFor(ref, "both", texts)).toEqual({
+      reference: "John 3:1 (KJV) · Jean 3:1 (Darby)",
+      verse: "en1\n\nfr1",
+    });
+  });
+
+  it("numbers the verses of a range", () => {
+    expect(scriptureFor({ ...ref, to: 2 }, "en", texts)?.verse).toBe(
+      "1 en1 2 en2",
+    );
+  });
+
+  it("keeps the language that has the verse, and is null when none does", () => {
+    const second = { ...ref, from: 2, to: 2 };
+    expect(scriptureFor(second, "both", texts)).toEqual({
+      reference: "John 3:2 (KJV)",
+      verse: "en2",
+    });
+    expect(scriptureFor({ ...ref, from: 9, to: 9 }, "both", texts)).toBeNull();
+    expect(scriptureFor(second, "fr", texts)).toBeNull();
   });
 });
 
