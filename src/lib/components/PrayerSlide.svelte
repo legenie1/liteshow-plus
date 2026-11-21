@@ -1,5 +1,6 @@
 <script lang="ts">
   import { BACKGROUND_INFO } from "$lib/backgrounds";
+  import { tokenize } from "$lib/highlight";
   import { splitFooter } from "$lib/prayer";
   import { TEXT_SCALE } from "$lib/settings";
   import { slideSettings } from "$lib/stores/settings";
@@ -7,9 +8,11 @@
 
   interface Props {
     prayer: PrayerPoint;
+    /** Given only by the Bible preview: its words become clickable to highlight them. */
+    onpick?: (block: number, word: number, shift: boolean) => void;
   }
 
-  const { prayer }: Props = $props();
+  const { prayer, onpick }: Props = $props();
 
   // The settings decide the background, the footer and (for the Bible) the text size.
   const kind = $derived(prayer.kind || "prayer");
@@ -60,6 +63,25 @@
   });
 </script>
 
+<!-- Bible verses can carry highlighted stretches (see highlight.ts), drawn yellow. -->
+{#snippet rich(text: string, block: number)}
+  {#each tokenize(text) as piece, i (i)}
+    {#if piece.word !== null && onpick}
+      {@const word = piece.word}
+      <button
+        type="button"
+        class="word"
+        class:hl={piece.marked}
+        tabindex="-1"
+        onclick={(event) => onpick(block, word, event.shiftKey)}
+        >{piece.text}</button
+      >
+    {:else}
+      <span class:hl={piece.marked}>{piece.text}</span>
+    {/if}
+  {/each}
+{/snippet}
+
 <div
   bind:this={slide}
   class="slide"
@@ -79,7 +101,12 @@
         {#each passages as passage, index (index)}
           {#if index > 0}<hr />{/if}
           <span class="pill">{passage.label}</span>
-          <p class="split-verse">{passage.verse.trim()}</p>
+          <p class="split-verse">
+            {#if kind === "bible"}{@render rich(
+                passage.verse,
+                index,
+              )}{:else}{passage.verse.trim()}{/if}
+          </p>
         {/each}
       </div>
     </div>
@@ -92,7 +119,12 @@
             <p class="reference">{prayer.reference.trim()}</p>
           {/if}
           {#if prayer.verse.trim()}
-            <p class="verse">{prayer.verse.trim()}</p>
+            <p class="verse">
+              {#if kind === "bible"}{@render rich(
+                  prayer.verse,
+                  0,
+                )}{:else}{prayer.verse.trim()}{/if}
+            </p>
           {/if}
         </div>
       {/if}
@@ -173,6 +205,33 @@
     margin: calc(1.6cqw * var(--fit, 1)) 0;
     border: none;
     border-top: 0.12cqw solid rgba(255, 255, 255, 0.25);
+  }
+
+  /* Highlighted words: yellowish, as when the pastor asks to underline. */
+  .hl {
+    color: #ffd84a;
+  }
+
+  .word {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0.3cqw;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-shadow: inherit;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .word:hover {
+    background: rgba(255, 216, 74, 0.25);
+  }
+
+  .word.hl {
+    color: #ffd84a;
   }
 
   .badge {

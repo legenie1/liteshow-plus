@@ -25,6 +25,7 @@
     type BibleMode,
     type SearchHit,
   } from "$lib/bible";
+  import { markPassage, markRange, toggleWord } from "$lib/highlight";
   import { language, t } from "$lib/i18n";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
 
@@ -50,7 +51,20 @@
   const query = $derived($bibleQuery.trim());
   const reference = $derived(parseReference(query));
   const partial = $derived(parsePartial($bibleQuery));
-  const passage = $derived(
+  // Words the operator highlighted, per block of the slide, for one passage: a new
+  // reference, language or template starts clean.
+  const markKey = $derived(
+    JSON.stringify([reference, $bibleMode, $bibleLayout]),
+  );
+  let marks = $state<{
+    key: string;
+    sets: number[][];
+    anchor: { block: number; word: number } | null;
+  }>({ key: "", sets: [], anchor: null });
+  const currentMarks = $derived(marks.key === markKey ? marks.sets : []);
+  const hasMarks = $derived(currentMarks.some((set) => set?.length));
+
+  const plainPassage = $derived(
     reference && texts
       ? buildPassage(
           reference,
@@ -61,6 +75,7 @@
         )
       : null,
   );
+  const passage = $derived(markPassage(plainPassage, currentMarks));
   const onScreen = $derived(
     passage !== null &&
       $currentPrayer !== null &&
@@ -173,6 +188,33 @@
     { mode: "fr", label: "bibleFr" },
     { mode: "both", label: "bibleBoth" },
   ];
+
+  // A click on a word highlights it (or removes it), Shift+click a whole stretch.
+  // A passage already on the projector is updated at once.
+  async function pickWord(block: number, word: number, shift: boolean) {
+    const wasLive = onScreen;
+    const sets = Array.from(currentMarks, (set) => set ?? []);
+    while (sets.length <= block) sets.push([]);
+    const anchor = marks.key === markKey ? marks.anchor : null;
+    sets[block] =
+      shift && anchor?.block === block
+        ? markRange(sets[block], anchor.word, word)
+        : toggleWord(sets[block], word);
+    marks = { key: markKey, sets, anchor: { block, word } };
+    if (wasLive) {
+      await tick();
+      project();
+    }
+  }
+
+  async function clearMarks() {
+    const wasLive = onScreen;
+    marks = { key: markKey, sets: [], anchor: null };
+    if (wasLive) {
+      await tick();
+      project();
+    }
+  }
 
   function project() {
     if (passage) selectPrayer(passage);
@@ -390,9 +432,19 @@
   </section>
 
   <section class="preview">
-    <span class="label">{$t("prayerPreview")}</span>
+    <div class="preview-head">
+      <span class="label">{$t("prayerPreview")}</span>
+      {#if passage}
+        <span class="label">{$t("bibleHighlightHint")}</span>
+        {#if hasMarks}
+          <button class="clear" onclick={clearMarks}
+            >{$t("bibleHighlightClear")}</button
+          >
+        {/if}
+      {/if}
+    </div>
     {#if passage}
-      <PrayerSlide prayer={passage} />
+      <PrayerSlide prayer={passage} onpick={pickWord} />
     {:else}
       <div class="placeholder"></div>
     {/if}
@@ -703,6 +755,19 @@
     gap: 0.3rem;
     min-width: 0;
     align-self: start;
+  }
+
+  .preview-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1rem;
+  }
+
+  .clear {
+    height: 1.6rem;
+    margin-left: auto;
+    font-size: 0.8rem;
   }
 
   .placeholder {

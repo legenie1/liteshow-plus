@@ -54,6 +54,9 @@ const en = {
   bibleBoth: "EN + FR",
   settings: "Settings",
   settingsBible: "Bible slides",
+  bibleHighlightHint:
+    "Click words to highlight them, Shift+click for a stretch",
+  bibleHighlightClear: "Clear highlights",
   settingsBackgrounds: "Backgrounds",
   settingsFooter: "Footer line",
   settingsBibleTextSize: "Verse text size",
@@ -180,6 +183,9 @@ const fr: Record<MessageKey, string> = {
   bibleBoth: "EN + FR",
   settings: "Réglages",
   settingsBible: "Diapos de la Bible",
+  bibleHighlightHint:
+    "Clique sur des mots pour les surligner, Maj+clic pour un passage",
+  bibleHighlightClear: "Effacer le surlignage",
   settingsBackgrounds: "Fonds",
   settingsFooter: "Devise du bas",
   settingsBibleTextSize: "Taille du texte biblique",
