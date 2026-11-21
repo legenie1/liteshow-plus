@@ -2,12 +2,17 @@
   import { onMount, untrack } from "svelte";
   import { get } from "svelte/store";
   import { currentPrayer, selectPrayer } from "$lib/stores/projection";
-  import { bibleMode, loadBible, type BibleTexts } from "$lib/stores/bible";
+  import {
+    activeTranslations,
+    bibleMode,
+    loadBible,
+    selectedTranslations,
+  } from "$lib/stores/bible";
   import {
     completeOnKey,
     parseLooseReference,
     scriptureFor,
-    type BibleMode,
+    type BibleTexts,
   } from "$lib/bible";
   import { prayerDraft, prayerHistory } from "$lib/stores/prayer";
   import {
@@ -18,10 +23,12 @@
     stepNumber,
   } from "$lib/prayer";
   import { language, t } from "$lib/i18n";
+  import type { BibleMode } from "$lib/translations";
   import type { PrayerPoint } from "$lib/types";
   import type { QueueItem } from "$lib/queue";
   import { prayerQueue } from "$lib/stores/queue";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
+  import VersionChips from "$lib/components/VersionChips.svelte";
   import QueueList from "$lib/components/QueueList.svelte";
 
   let textArea = $state<HTMLTextAreaElement>();
@@ -30,20 +37,29 @@
   // Typing a reference fills in the verse text and tidies the reference line.
   // Both only follow while the operator hasn't taken over: a verse or a reference
   // they changed by hand is left alone (the button below can still refill it).
-  let texts = $state<BibleTexts | null>(null);
+  let texts = $state<BibleTexts>({});
   let autoVerse = "";
   let autoReference = "";
 
-  // The Bible files are big: fetched the first time they are needed.
-  function ensureBible() {
-    if (texts) return;
-    loadBible().then(
-      (loaded) => (texts = loaded),
+  // The Bible files are big: fetched the first time they are needed, then again
+  // whenever another translation is chosen.
+  let bibleWanted = $state(false);
+  const ensureBible = () => (bibleWanted = true);
+  const ready = $derived(
+    $activeTranslations.length > 0 &&
+      $activeTranslations.every((translation) => texts[translation.id]),
+  );
+  $effect(() => {
+    if (!bibleWanted) return;
+    const ids = $selectedTranslations.filter((id) => !texts[id]);
+    if (ids.length === 0) return;
+    loadBible(ids).then(
+      (loaded) => (texts = { ...texts, ...loaded }),
       () => {
         // Without the files the fields simply stay manual.
       },
     );
-  }
+  });
 
   onMount(() => {
     if ($prayerDraft.reference.trim() !== "") ensureBible();
@@ -52,9 +68,9 @@
   const reference = $derived($prayerDraft.reference);
   const parsed = $derived(parseLooseReference(reference));
   const scripture = $derived(
-    parsed && texts ? scriptureFor(parsed, $bibleMode, texts) : null,
+    parsed && ready ? scriptureFor(parsed, $activeTranslations, texts) : null,
   );
-  const missing = $derived(parsed !== null && texts !== null && !scripture);
+  const missing = $derived(parsed !== null && ready && !scripture);
   const canFill = $derived(
     scripture !== null && $prayerDraft.verse !== scripture.verse,
   );
@@ -242,6 +258,7 @@
           {/each}
         </div>
       </div>
+      <VersionChips compact />
       <input
         id="prayer-reference"
         placeholder={$t("prayerReferencePlaceholder")}

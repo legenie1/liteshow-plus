@@ -14,6 +14,7 @@ import {
   scriptureFor,
   searchVerses,
   type BibleText,
+  type Translation,
 } from "./bible";
 
 const JOHN = 42;
@@ -148,55 +149,67 @@ describe("completeOnSpace", () => {
   });
 });
 
+const KJV: Translation = { id: "KJV", label: "KJV", language: "en" };
+const DARBY: Translation = { id: "Darby", label: "Darby", language: "fr" };
+const MSG: Translation = { id: "MSG", label: "MSG", language: "en" };
+const EN = [KJV];
+const FR = [DARBY];
+const BOTH = [KJV, DARBY];
+
 describe("searchVerses", () => {
-  const texts = { en: [] as BibleText, fr: [] as BibleText };
-  texts.en[JOHN] = [
+  const texts = { KJV: [] as BibleText, Darby: [] as BibleText };
+  texts.KJV[JOHN] = [
     [],
     [],
     ["God so loved the world", "one loves another", "Love one another"],
   ];
-  texts.fr[JOHN] = [
+  texts.Darby[JOHN] = [
     [],
     [],
     ["Dieu a tant aimé le monde", "Aimez-vous les uns"],
   ];
 
   it("needs every word, ignoring case", () => {
-    const { hits, total } = searchVerses(texts, "WORLD loved", "en");
+    const { hits, total } = searchVerses(texts, EN, "WORLD loved");
     expect(total).toBe(1);
     expect(hits[0].ref).toEqual({ book: JOHN, chapter: 3, from: 1, to: 1 });
     expect(hits[0].text).toBe("God so loved the world");
   });
 
   it("ignores accents, in both directions", () => {
-    expect(searchVerses(texts, "aime", "fr").total).toBe(2);
-    expect(searchVerses(texts, "AIMÉ", "fr").total).toBe(2);
-    expect(searchVerses(texts, "tant aimé", "fr").total).toBe(1);
+    expect(searchVerses(texts, FR, "aime").total).toBe(2);
+    expect(searchVerses(texts, FR, "AIMÉ").total).toBe(2);
+    expect(searchVerses(texts, FR, "tant aimé").total).toBe(1);
   });
 
   it("puts the exact phrase before looser matches", () => {
     // Verse 3 comes later in the Bible but holds the exact phrase "one another".
-    const { hits } = searchVerses(texts, "one another", "en");
+    const { hits } = searchVerses(texts, EN, "one another");
     expect(hits.map((h) => h.ref.from)).toEqual([3, 2]);
   });
 
-  it("searches the languages of the mode and labels each hit", () => {
-    const both = searchVerses(texts, "monde", "both");
-    expect(both.hits.map((h) => h.language)).toEqual(["fr"]);
-    const worldOrMonde = searchVerses(texts, "world", "both");
-    expect(worldOrMonde.hits.map((h) => h.language)).toEqual(["en"]);
-    expect(searchVerses(texts, "monde", "en").total).toBe(0);
+  it("searches the chosen translations and labels each hit", () => {
+    const both = searchVerses(texts, BOTH, "monde");
+    expect(both.hits.map((h) => h.translation.id)).toEqual(["Darby"]);
+    const worldOrMonde = searchVerses(texts, BOTH, "world");
+    expect(worldOrMonde.hits.map((h) => h.translation.id)).toEqual(["KJV"]);
+    expect(searchVerses(texts, EN, "monde").total).toBe(0);
+  });
+
+  it("skips a chosen translation that is not loaded yet", () => {
+    const other: Translation = { id: "NKJV", label: "NKJV", language: "en" };
+    expect(searchVerses(texts, [other, KJV], "world").total).toBe(1);
   });
 
   it("waits for three letters", () => {
-    expect(searchVerses(texts, "lo", "en")).toEqual({ hits: [], total: 0 });
-    expect(searchVerses(texts, "  ", "en")).toEqual({ hits: [], total: 0 });
+    expect(searchVerses(texts, EN, "lo")).toEqual({ hits: [], total: 0 });
+    expect(searchVerses(texts, EN, "  ")).toEqual({ hits: [], total: 0 });
   });
 
   it("keeps the first hundred and reports the real total", () => {
-    const many = { en: [] as BibleText, fr: [] as BibleText };
-    many.en[0] = [Array.from({ length: 150 }, () => "grace")];
-    const { hits, total } = searchVerses(many, "grace", "en");
+    const many = { KJV: [] as BibleText };
+    many.KJV[0] = [Array.from({ length: 150 }, () => "grace")];
+    const { hits, total } = searchVerses(many, EN, "grace");
     expect(hits).toHaveLength(100);
     expect(total).toBe(150);
   });
@@ -280,16 +293,13 @@ describe("formatReference", () => {
 });
 
 describe("buildPassage", () => {
-  const texts = {
-    en: [] as BibleText,
-    fr: [] as BibleText,
-  };
-  texts.en[JOHN] = [[], [], ["en1", "en2"]];
-  texts.fr[JOHN] = [[], [], ["fr1", "fr2"]];
+  const texts = { KJV: [] as BibleText, Darby: [] as BibleText };
+  texts.KJV[JOHN] = [[], [], ["en1", "en2"]];
+  texts.Darby[JOHN] = [[], [], ["fr1", "fr2"]];
   const ref = { book: JOHN, chapter: 3, from: 1, to: 1 };
 
-  it("stacks both languages on one slide", () => {
-    expect(buildPassage(ref, "both", texts)).toEqual({
+  it("stacks the translations on one slide", () => {
+    expect(buildPassage(ref, BOTH, texts)).toEqual({
       number: "",
       text: "John 3:1 · Jean 3:1",
       reference: "KJV · Darby",
@@ -300,37 +310,59 @@ describe("buildPassage", () => {
   });
 
   it("gives each translation its own block in the split template", () => {
-    expect(buildPassage(ref, "both", texts, "split")?.passages).toEqual([
+    expect(buildPassage(ref, BOTH, texts, "split")?.passages).toEqual([
       { label: "John 3:1 (KJV)", verse: "en1" },
       { label: "Jean 3:1 (Darby)", verse: "fr1" },
     ]);
-    expect(buildPassage(ref, "en", texts, "split")?.passages).toEqual([
+    expect(buildPassage(ref, EN, texts, "split")?.passages).toEqual([
       { label: "John 3:1 (KJV)", verse: "en1" },
     ]);
   });
 
-  it("keeps one language when asked", () => {
-    expect(buildPassage(ref, "fr", texts)?.verse).toBe("fr1");
-    expect(buildPassage(ref, "en", texts)?.reference).toBe("KJV");
+  it("keeps one translation when asked", () => {
+    expect(buildPassage(ref, FR, texts)?.verse).toBe("fr1");
+    expect(buildPassage(ref, EN, texts)?.reference).toBe("KJV");
   });
 
   it("numbers the verses of a range", () => {
     const range = { ...ref, to: 2 };
-    expect(buildPassage(range, "en", texts)?.verse).toBe("1 en1 2 en2");
+    expect(buildPassage(range, EN, texts)?.verse).toBe("1 en1 2 en2");
   });
 
-  it("shows the other language alone when one translation lacks the verse", () => {
-    texts.fr[JOHN] = [[], [], ["fr1"]];
+  it("shows the other translation alone when one lacks the verse", () => {
+    texts.Darby[JOHN] = [[], [], ["fr1"]];
     const second = { ...ref, from: 2, to: 2 };
-    expect(buildPassage(second, "both", texts)?.verse).toBe("en2");
-    expect(buildPassage({ ...ref, from: 9, to: 9 }, "both", texts)).toBeNull();
+    expect(buildPassage(second, BOTH, texts)?.verse).toBe("en2");
+    expect(buildPassage({ ...ref, from: 9, to: 9 }, BOTH, texts)).toBeNull();
   });
 
   it("doesn't repeat a heading that is the same in both languages", () => {
     const job = { book: 17, chapter: 1, from: 1, to: 1 };
-    texts.en[17] = [["a"]];
-    texts.fr[17] = [["b"]];
-    expect(buildPassage(job, "both", texts)?.text).toBe("Job 1:1");
+    texts.KJV[17] = [["a"]];
+    texts.Darby[17] = [["b"]];
+    expect(buildPassage(job, BOTH, texts)?.text).toBe("Job 1:1");
+  });
+
+  it("takes any translation, in the order chosen", () => {
+    const more = { ...texts, MSG: [] as BibleText };
+    more.MSG[JOHN] = [[], [], ["msg1"]];
+    const passage = buildPassage(ref, [MSG, KJV], more, "split");
+    expect(passage?.text).toBe("John 3:1");
+    expect(passage?.reference).toBe("MSG · KJV");
+    expect(passage?.passages?.map((p) => p.label)).toEqual([
+      "John 3:1 (MSG)",
+      "John 3:1 (KJV)",
+    ]);
+  });
+
+  it("leaves out a verse the translation skips, and has nothing for a skipped one", () => {
+    const skipping = { MSG: [] as BibleText };
+    skipping.MSG[JOHN] = [[], [], ["a", "", "c"]];
+    const range = { ...ref, to: 3 };
+    expect(buildPassage(range, [MSG], skipping)?.verse).toBe("1 a 3 c");
+    expect(
+      buildPassage({ ...ref, from: 2, to: 2 }, [MSG], skipping),
+    ).toBeNull();
   });
 });
 
@@ -352,43 +384,43 @@ describe("parseLooseReference", () => {
 });
 
 describe("scriptureFor", () => {
-  const texts = { en: [] as BibleText, fr: [] as BibleText };
-  texts.en[JOHN] = [[], [], ["en1", "en2"]];
-  texts.fr[JOHN] = [[], [], ["fr1"]];
+  const texts = { KJV: [] as BibleText, Darby: [] as BibleText };
+  texts.KJV[JOHN] = [[], [], ["en1", "en2"]];
+  texts.Darby[JOHN] = [[], [], ["fr1"]];
   const ref = { book: JOHN, chapter: 3, from: 1, to: 1 };
 
   it("gives the reference line and the verse of each language", () => {
-    expect(scriptureFor(ref, "en", texts)).toEqual({
+    expect(scriptureFor(ref, EN, texts)).toEqual({
       reference: "John 3:1 (KJV)",
       verse: "en1",
     });
-    expect(scriptureFor(ref, "fr", texts)).toEqual({
+    expect(scriptureFor(ref, FR, texts)).toEqual({
       reference: "Jean 3:1 (Darby)",
       verse: "fr1",
     });
   });
 
   it("stacks both languages, English first", () => {
-    expect(scriptureFor(ref, "both", texts)).toEqual({
+    expect(scriptureFor(ref, BOTH, texts)).toEqual({
       reference: "John 3:1 (KJV) · Jean 3:1 (Darby)",
       verse: "en1\n\nfr1",
     });
   });
 
   it("numbers the verses of a range", () => {
-    expect(scriptureFor({ ...ref, to: 2 }, "en", texts)?.verse).toBe(
+    expect(scriptureFor({ ...ref, to: 2 }, EN, texts)?.verse).toBe(
       "1 en1 2 en2",
     );
   });
 
   it("keeps the language that has the verse, and is null when none does", () => {
     const second = { ...ref, from: 2, to: 2 };
-    expect(scriptureFor(second, "both", texts)).toEqual({
+    expect(scriptureFor(second, BOTH, texts)).toEqual({
       reference: "John 3:2 (KJV)",
       verse: "en2",
     });
-    expect(scriptureFor({ ...ref, from: 9, to: 9 }, "both", texts)).toBeNull();
-    expect(scriptureFor(second, "fr", texts)).toBeNull();
+    expect(scriptureFor({ ...ref, from: 9, to: 9 }, BOTH, texts)).toBeNull();
+    expect(scriptureFor(second, FR, texts)).toBeNull();
   });
 });
 

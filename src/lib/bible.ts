@@ -3,7 +3,18 @@ import type { PrayerPoint } from "$lib/types";
 /** Verses of one translation: books (canonical order) > chapters > verses. */
 export type BibleText = string[][][];
 
-export type BibleMode = "en" | "fr" | "both";
+export type BibleLanguage = "en" | "fr";
+
+/** One translation: `id` is also the label shown on the slide ("KJV", "MSG"). */
+export interface Translation {
+  id: string;
+  label: string;
+  /** Decides the language of the book names in the slide's heading. */
+  language: BibleLanguage;
+}
+
+/** The loaded translations, by id. */
+export type BibleTexts = Record<string, BibleText>;
 
 /**
  * How a two-language passage is laid out: "stacked" keeps one heading and the
@@ -25,9 +36,6 @@ interface Book {
   /** Extra short names, already normalized (see `normalize`). */
   abbr?: string[];
 }
-
-export const EN_VERSION = "KJV";
-export const FR_VERSION = "Darby";
 
 // Canonical Protestant order, the same as the bundled JSON files.
 export const BOOKS: Book[] = [
@@ -226,11 +234,15 @@ export function completeOnKey(
   return key === "Tab" && completed === input ? null : completed;
 }
 
-/** The verses of a reference, or null when this translation doesn't have them. */
+/**
+ * The verses of a reference, or null when this translation doesn't have them. A
+ * verse a translation skips is an empty string; asking only for those is null too.
+ */
 export function getVerses(text: BibleText, ref: Reference): string[] | null {
   const chapter = text[ref.book]?.[ref.chapter - 1];
   if (!chapter || ref.from > chapter.length) return null;
-  return chapter.slice(ref.from - 1, Math.min(ref.to, chapter.length));
+  const verses = chapter.slice(ref.from - 1, Math.min(ref.to, chapter.length));
+  return verses.every((verse) => !verse) ? null : verses;
 }
 
 export function formatReference(ref: Reference, language: "en" | "fr"): string {
@@ -242,7 +254,10 @@ export function formatReference(ref: Reference, language: "en" | "fr"): string {
 // A range is read as running text; the numbers keep the reader oriented.
 function joinVerses(verses: string[], from: number): string {
   if (verses.length === 1) return verses[0];
-  return verses.map((verse, i) => `${from + i} ${verse}`).join(" ");
+  return verses
+    .map((verse, i) => (verse ? `${from + i} ${verse}` : ""))
+    .filter((verse) => verse !== "")
+    .join(" ");
 }
 
 export const SEARCH_LIMIT = 100;
@@ -250,7 +265,7 @@ export const SEARCH_MIN_LETTERS = 3;
 
 export interface SearchHit {
   ref: Reference;
-  language: "en" | "fr";
+  translation: Translation;
   text: string;
 }
 
@@ -284,38 +299,40 @@ function folded(text: BibleText): BibleText {
  * SEARCH_LIMIT.
  */
 export function searchVerses(
-  texts: { en: BibleText; fr: BibleText },
+  texts: BibleTexts,
+  translations: readonly Translation[],
   query: string,
-  mode: BibleMode,
 ): { hits: SearchHit[]; total: number } {
   const terms = searchTerms(query);
   if (terms.join("").length < SEARCH_MIN_LETTERS) return { hits: [], total: 0 };
   const phrase = terms.join(" ");
-  const languages: ("en" | "fr")[] = mode === "both" ? ["en", "fr"] : [mode];
 
   const exact: SearchHit[] = [];
   const loose: SearchHit[] = [];
-  for (const language of languages) {
-    const index = folded(texts[language]);
-    index.forEach((book, b) =>
+  for (const translation of translations) {
+    const text = texts[translation.id];
+    if (!text) continue;
+    folded(text).forEach((book, b) =>
       book.forEach((chapter, c) =>
         chapter.forEach((verse, v) => {
           if (!terms.every((term) => verse.includes(term))) return;
           const hit: SearchHit = {
             ref: { book: b, chapter: c + 1, from: v + 1, to: v + 1 },
-            language,
-            text: texts[language][b][c][v],
+            translation,
+            text: text[b][c][v],
           };
           (verse.includes(phrase) ? exact : loose).push(hit);
         }),
       ),
     );
   }
+  const order = (hit: SearchHit) =>
+    translations.findIndex((t) => t.id === hit.translation.id);
   const position = (a: SearchHit, b: SearchHit) =>
     a.ref.book - b.ref.book ||
     a.ref.chapter - b.ref.chapter ||
     a.ref.from - b.ref.from ||
-    (a.language === b.language ? 0 : a.language === "en" ? -1 : 1);
+    order(a) - order(b);
   exact.sort(position);
   loose.sort(position);
   return {
@@ -363,34 +380,42 @@ export function parseLooseReference(input: string): Reference | null {
   return parseReference(first);
 }
 
+/** The chosen translations that have the passage, in the order chosen. */
+function partsFor(
+  ref: Reference,
+  translations: readonly Translation[],
+  texts: BibleTexts,
+): { translation: Translation; heading: string; verse: string }[] {
+  const parts = [];
+  for (const translation of translations) {
+    const text = texts[translation.id];
+    const verses = text ? getVerses(text, ref) : null;
+    if (!verses) continue;
+    parts.push({
+      translation,
+      heading: formatReference(ref, translation.language),
+      verse: joinVerses(verses, ref.from),
+    });
+  }
+  return parts;
+}
+
 /**
  * The reference line and the verse text of a passage, to fill in a prayer point
- * from the Bible: "John 3:16 (KJV)" and its text, in the language(s) of `mode`.
- * Null when neither translation has the verse.
+ * from the Bible: "John 3:16 (KJV)" and its text, for each chosen translation.
+ * Null when none of them has the verse.
  */
 export function scriptureFor(
   ref: Reference,
-  mode: BibleMode,
-  texts: { en: BibleText; fr: BibleText },
+  translations: readonly Translation[],
+  texts: BibleTexts,
 ): { reference: string; verse: string } | null {
-  const parts: { reference: string; verse: string }[] = [];
-  const en = mode !== "fr" ? getVerses(texts.en, ref) : null;
-  const fr = mode !== "en" ? getVerses(texts.fr, ref) : null;
-  if (en) {
-    parts.push({
-      reference: `${formatReference(ref, "en")} (${EN_VERSION})`,
-      verse: joinVerses(en, ref.from),
-    });
-  }
-  if (fr) {
-    parts.push({
-      reference: `${formatReference(ref, "fr")} (${FR_VERSION})`,
-      verse: joinVerses(fr, ref.from),
-    });
-  }
+  const parts = partsFor(ref, translations, texts);
   if (parts.length === 0) return null;
   return {
-    reference: parts.map((p) => p.reference).join(" · "),
+    reference: parts
+      .map((p) => `${p.heading} (${p.translation.label})`)
+      .join(" · "),
     verse: parts.map((p) => p.verse).join("\n\n"),
   };
 }
@@ -402,39 +427,23 @@ export function scriptureFor(
  */
 export function buildPassage(
   ref: Reference,
-  mode: BibleMode,
-  texts: { en: BibleText; fr: BibleText },
+  translations: readonly Translation[],
+  texts: BibleTexts,
   layout: BibleLayout = "stacked",
 ): PrayerPoint | null {
-  const en = getVerses(texts.en, ref);
-  const fr = getVerses(texts.fr, ref);
-  const parts: { heading: string; version: string; verse: string }[] = [];
-  if (mode !== "fr" && en) {
-    parts.push({
-      heading: formatReference(ref, "en"),
-      version: EN_VERSION,
-      verse: joinVerses(en, ref.from),
-    });
-  }
-  if (mode !== "en" && fr) {
-    parts.push({
-      heading: formatReference(ref, "fr"),
-      version: FR_VERSION,
-      verse: joinVerses(fr, ref.from),
-    });
-  }
+  const parts = partsFor(ref, translations, texts);
   if (parts.length === 0) return null;
   return {
     number: "",
     text: [...new Set(parts.map((p) => p.heading))].join(" · "),
-    reference: parts.map((p) => p.version).join(" · "),
+    reference: parts.map((p) => p.translation.label).join(" · "),
     verse: parts.map((p) => p.verse).join("\n\n"),
     kind: "bible",
-    // The split template covers one translation as well as two.
+    // The split template covers one translation as well as several.
     passages:
       layout === "split"
         ? parts.map((p) => ({
-            label: `${p.heading} (${p.version})`,
+            label: `${p.heading} (${p.translation.label})`,
             verse: p.verse,
           }))
         : [],

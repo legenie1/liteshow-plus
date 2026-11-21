@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { bibleLayout } from "$lib/stores/bible";
+  import {
+    bibleLayout,
+    chooseTranslation,
+    translationChoice,
+    translations,
+  } from "$lib/stores/bible";
   import {
     setBackground,
     setBibleTextSize,
@@ -14,7 +19,7 @@
     type BackgroundId,
     type TextSize,
   } from "$lib/settings";
-  import type { BibleLayout } from "$lib/bible";
+  import type { BibleLanguage, BibleLayout } from "$lib/bible";
   import { t } from "$lib/i18n";
 
   // Global settings: one popup for the whole app, one section per topic.
@@ -50,6 +55,16 @@
     large: "sizeLarge",
     huge: "sizeHuge",
   };
+
+  // Which translation EN, FR and EN + FR use. A language with a single one still
+  // shows its select, so the settings always say what is on the slide.
+  const languages: {
+    language: BibleLanguage;
+    label: "settingsEnglishTranslation" | "settingsFrenchTranslation";
+  }[] = [
+    { language: "en", label: "settingsEnglishTranslation" },
+    { language: "fr", label: "settingsFrenchTranslation" },
+  ];
 
   const layouts: {
     layout: BibleLayout;
@@ -120,6 +135,25 @@
               checked={$slideSettings.footers[kind]}
               onchange={(event) => setFooter(kind, event.currentTarget.checked)}
             />
+          </label>
+        {/each}
+      </section>
+
+      <section>
+        <span class="section-title">{$t("settingsTranslations")}</span>
+        {#each languages as { language, label } (language)}
+          <label class="row">
+            <span>{$t(label)}</span>
+            <select
+              value={$translationChoice[language] ?? ""}
+              disabled={!translations.some((tr) => tr.language === language)}
+              onchange={(event) =>
+                chooseTranslation(language, event.currentTarget.value)}
+            >
+              {#each translations.filter((tr) => tr.language === language) as translation (translation.id)}
+                <option value={translation.id}>{translation.label}</option>
+              {/each}
+            </select>
           </label>
         {/each}
       </section>

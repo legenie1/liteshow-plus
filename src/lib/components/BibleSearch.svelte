@@ -2,26 +2,25 @@
   import { onMount, tick } from "svelte";
   import { currentPrayer, selectPrayer } from "$lib/stores/projection";
   import {
+    activeTranslations,
     bibleLayout,
     bibleMode,
     bibleQuery,
     loadBible,
-    type BibleTexts,
+    selectedTranslations,
   } from "$lib/stores/bible";
   import {
     BOOKS,
     buildPassage,
     completeOnKey,
-    EN_VERSION,
     formatReference,
-    FR_VERSION,
     highlightParts,
     parsePartial,
     parseReference,
     SEARCH_LIMIT,
     SEARCH_MIN_LETTERS,
     searchVerses,
-    type BibleMode,
+    type BibleTexts,
     type SearchHit,
   } from "$lib/bible";
   import {
@@ -36,13 +35,29 @@
   import { bibleQueue } from "$lib/stores/queue";
   import QueueList from "$lib/components/QueueList.svelte";
   import { language, t } from "$lib/i18n";
+  import type { BibleMode } from "$lib/translations";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
+  import VersionChips from "$lib/components/VersionChips.svelte";
 
   // The Old Testament has 39 books; the New one starts right after.
   const NEW_TESTAMENT = 39;
 
-  let texts = $state<BibleTexts | null>(null);
+  // The chosen translations are read the first time they are needed.
+  let texts = $state<BibleTexts>({});
   let loadFailed = $state(false);
+  const ready = $derived(
+    $activeTranslations.length > 0 &&
+      $activeTranslations.every((translation) => texts[translation.id]),
+  );
+  $effect(() => {
+    const ids = $selectedTranslations.filter((id) => !texts[id]);
+    if (ids.length === 0) return;
+    loadFailed = false;
+    loadBible(ids).then(
+      (loaded) => (texts = { ...texts, ...loaded }),
+      () => (loadFailed = true),
+    );
+  });
   let input = $state<HTMLInputElement>();
   let browser = $state<HTMLDivElement>();
   // The magnifier switches the field from "a reference" to "words to find".
@@ -51,10 +66,6 @@
 
   onMount(() => {
     input?.focus();
-    loadBible().then(
-      (loaded) => (texts = loaded),
-      () => (loadFailed = true),
-    );
   });
 
   const query = $derived($bibleQuery.trim());
@@ -63,7 +74,7 @@
   // Words the operator highlighted, per block of the slide, for one passage: a new
   // reference, language or template starts clean.
   const markKey = $derived(
-    JSON.stringify([reference, $bibleMode, $bibleLayout]),
+    JSON.stringify([reference, $selectedTranslations, $bibleLayout]),
   );
   let marks = $state<{
     key: string;
@@ -73,8 +84,8 @@
   const currentMarks = $derived(marks.key === markKey ? marks.sets : []);
 
   const plainPassage = $derived(
-    reference && texts
-      ? buildPassage(reference, $bibleMode, texts, $bibleLayout)
+    reference && ready
+      ? buildPassage(reference, $activeTranslations, texts, $bibleLayout)
       : null,
   );
   const passage = $derived(markPassage(plainPassage, currentMarks));
@@ -85,7 +96,7 @@
     $bibleQueue.find((item) => item.id === selectedId) ?? null,
   );
   $effect(() => {
-    void [$bibleQuery, $bibleMode, $bibleLayout];
+    void [$bibleQuery, $selectedTranslations, $bibleLayout];
     selectedId = null;
   });
 
@@ -101,21 +112,26 @@
       JSON.stringify($currentPrayer) === JSON.stringify(shown),
   );
 
-  // The two translations number a few chapters and verses differently: offer
-  // the larger of the two so nothing is unreachable.
+  // Translations number a few chapters and verses differently: offer the largest
+  // count among the chosen ones so nothing is unreachable.
   const chapterCount = $derived(
-    texts && partial.book !== null
+    ready && partial.book !== null
       ? Math.max(
-          texts.en[partial.book]?.length ?? 0,
-          texts.fr[partial.book]?.length ?? 0,
+          0,
+          ...$activeTranslations.map(
+            (tr) => texts[tr.id][partial.book!]?.length ?? 0,
+          ),
         )
       : 0,
   );
   const verseCount = $derived(
-    texts && partial.book !== null && partial.chapter !== null
+    ready && partial.book !== null && partial.chapter !== null
       ? Math.max(
-          texts.en[partial.book]?.[partial.chapter - 1]?.length ?? 0,
-          texts.fr[partial.book]?.[partial.chapter - 1]?.length ?? 0,
+          0,
+          ...$activeTranslations.map(
+            (tr) =>
+              texts[tr.id][partial.book!]?.[partial.chapter! - 1]?.length ?? 0,
+          ),
         )
       : 0,
   );
@@ -123,8 +139,8 @@
   const bookName = (index: number) => BOOKS[index][$language];
 
   const result = $derived(
-    searching && texts
-      ? searchVerses(texts, searchText, $bibleMode)
+    searching && ready
+      ? searchVerses(texts, $activeTranslations, searchText)
       : { hits: [], total: 0 },
   );
   const searchReady = $derived(
@@ -152,7 +168,7 @@
     reference.from === hit.ref.from;
 
   const hitKey = (hit: SearchHit) =>
-    `${hit.language}:${hit.ref.book}:${hit.ref.chapter}:${hit.ref.from}`;
+    `${hit.translation.id}:${hit.ref.book}:${hit.ref.chapter}:${hit.ref.from}`;
 
   function onInput(event: Event & { currentTarget: HTMLInputElement }) {
     if (searching) searchText = event.currentTarget.value;
@@ -191,7 +207,7 @@
 
   // Typing "Jean 3:16" must bring those entries into view in the three lists.
   $effect(() => {
-    void [partial.book, partial.chapter, partial.from, texts];
+    void [partial.book, partial.chapter, partial.from, ready];
     tick().then(() => {
       for (const item of browser?.querySelectorAll(".item.active") ?? []) {
         item.scrollIntoView({ block: "nearest" });
@@ -373,9 +389,11 @@
       >
     </div>
 
+    <VersionChips />
+
     {#if loadFailed}
       <p class="message error">{$t("bibleLoadError")}</p>
-    {:else if !texts}
+    {:else if !ready}
       <p class="message">{$t("bibleLoading")}</p>
     {:else if searching}
       <p class="message">
@@ -415,8 +433,8 @@
               }}
             >
               <span class="hit-ref">
-                {formatReference(hit.ref, hit.language)}
-                <small>{hit.language === "en" ? EN_VERSION : FR_VERSION}</small>
+                {formatReference(hit.ref, hit.translation.language)}
+                <small>{hit.translation.label}</small>
               </span>
               <span class="hit-text"
                 >{#each highlightParts(hit.text, searchText) as part, i (i)}{#if part.match}<mark
