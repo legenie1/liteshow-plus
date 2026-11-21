@@ -4,7 +4,6 @@
   import { currentPrayer, selectPrayer } from "$lib/stores/projection";
   import {
     activeTranslations,
-    bibleMode,
     loadBible,
     selectedTranslations,
   } from "$lib/stores/bible";
@@ -23,12 +22,11 @@
     stepNumber,
   } from "$lib/prayer";
   import { language, t } from "$lib/i18n";
-  import type { BibleMode } from "$lib/translations";
   import type { PrayerPoint } from "$lib/types";
   import type { QueueItem } from "$lib/queue";
   import { prayerQueue } from "$lib/stores/queue";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
-  import VersionChips from "$lib/components/VersionChips.svelte";
+  import VersionPicker from "$lib/components/VersionPicker.svelte";
   import QueueList from "$lib/components/QueueList.svelte";
 
   let textArea = $state<HTMLTextAreaElement>();
@@ -131,15 +129,6 @@
       prayerDraft.update((p) => ({ ...p, reference: completed }));
     }
   }
-
-  const modes: {
-    mode: BibleMode;
-    label: "bibleEn" | "bibleFr" | "bibleBoth";
-  }[] = [
-    { mode: "en", label: "bibleEn" },
-    { mode: "fr", label: "bibleFr" },
-    { mode: "both", label: "bibleBoth" },
-  ];
 
   // A click on a queued point only previews it; a double click projects it. Typing
   // in the form goes back to the point being written.
@@ -246,19 +235,7 @@
     </div>
 
     <div class="field">
-      <div class="field-head">
-        <label for="prayer-reference">{$t("prayerReference")}</label>
-        <div class="modes" role="group" aria-label={$t("bibleLanguages")}>
-          {#each modes as { mode, label } (mode)}
-            <button
-              class:active={$bibleMode === mode}
-              aria-pressed={$bibleMode === mode}
-              onclick={() => bibleMode.set(mode)}>{$t(label)}</button
-            >
-          {/each}
-        </div>
-      </div>
-      <VersionChips compact />
+      <label for="prayer-reference">{$t("prayerReference")}</label>
       <input
         id="prayer-reference"
         placeholder={$t("prayerReferencePlaceholder")}
@@ -272,6 +249,7 @@
       {#if missing}
         <span class="hint">{$t("prayerReferenceMissing")}</span>
       {/if}
+      <VersionPicker compact />
     </div>
 
     <div class="field">
@@ -296,8 +274,10 @@
       >
       <button
         disabled={!queueable}
+        class="plus"
+        aria-label={$t("prayerQueueAddHint")}
         title={$t("prayerQueueAddHint")}
-        onclick={enqueue}>{$t("queueAdd")}</button
+        onclick={enqueue}>+</button
       >
       <button onclick={next}>{$t("prayerNext")}</button>
       <button onclick={clear}>{$t("prayerClear")}</button>
@@ -439,6 +419,13 @@
     gap: 0.5rem;
   }
 
+  .plus {
+    width: 2rem;
+    padding: 0;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
   .primary {
     border-color: var(--accent);
     background: var(--accent);
@@ -460,35 +447,6 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-  }
-
-  .modes {
-    display: flex;
-  }
-
-  .modes button {
-    height: 1.5rem;
-    padding: 0 0.5rem;
-    border-radius: 0;
-    font-size: 0.75rem;
-  }
-
-  .modes button:first-child {
-    border-radius: 6px 0 0 6px;
-  }
-
-  .modes button:not(:first-child) {
-    margin-left: -1px;
-  }
-
-  .modes button:last-child {
-    border-radius: 0 6px 6px 0;
-  }
-
-  .modes button.active {
-    position: relative;
-    border-color: var(--accent);
-    color: var(--accent);
   }
 
   .history-label {

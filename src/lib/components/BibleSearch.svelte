@@ -1,10 +1,15 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
-  import { currentPrayer, selectPrayer } from "$lib/stores/projection";
+  import {
+    currentImage,
+    currentPrayer,
+    currentVideo,
+    isBlackout,
+    selectPrayer,
+  } from "$lib/stores/projection";
   import {
     activeTranslations,
     bibleLayout,
-    bibleMode,
     bibleQuery,
     loadBible,
     selectedTranslations,
@@ -35,9 +40,8 @@
   import { bibleQueue } from "$lib/stores/queue";
   import QueueList from "$lib/components/QueueList.svelte";
   import { language, t } from "$lib/i18n";
-  import type { BibleMode } from "$lib/translations";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
-  import VersionChips from "$lib/components/VersionChips.svelte";
+  import VersionPicker from "$lib/components/VersionPicker.svelte";
 
   // The Old Testament has 39 books; the New one starts right after.
   const NEW_TESTAMENT = 39;
@@ -215,15 +219,6 @@
     });
   });
 
-  const modes: {
-    mode: BibleMode;
-    label: "bibleEn" | "bibleFr" | "bibleBoth";
-  }[] = [
-    { mode: "en", label: "bibleEn" },
-    { mode: "fr", label: "bibleFr" },
-    { mode: "both", label: "bibleBoth" },
-  ];
-
   // The queue keeps finished slides to come back to; the one on screen is lit.
   const isLive = (item: QueueItem) =>
     $currentPrayer !== null &&
@@ -366,30 +361,7 @@
       </div>
     </div>
 
-    <div class="actions">
-      <div class="modes" role="group" aria-label={$t("bibleLanguages")}>
-        {#each modes as { mode, label } (mode)}
-          <button
-            class:active={$bibleMode === mode}
-            aria-pressed={$bibleMode === mode}
-            onclick={() => bibleMode.set(mode)}>{$t(label)}</button
-          >
-        {/each}
-      </div>
-      <button
-        disabled={!passage}
-        title={$t("bibleQueueAddHint")}
-        onclick={enqueue}>{$t("queueAdd")}</button
-      >
-      <button
-        class="primary"
-        class:live={onScreen}
-        disabled={!shown}
-        onclick={project}>{$t("prayerProject")}</button
-      >
-    </div>
-
-    <VersionChips />
+    <VersionPicker />
 
     {#if loadFailed}
       <p class="message error">{$t("bibleLoadError")}</p>
@@ -505,16 +477,21 @@
   <section class="preview">
     <div class="preview-head">
       <span class="label">{$t("prayerPreview")}</span>
-      {#if shown}
-        <span class="label">{$t("bibleHighlightHint")}</span>
-        {#if hasMarks}
-          <button class="clear" onclick={clearMarks}
-            >{$t("bibleHighlightClear")}</button
-          >
-        {/if}
-      {/if}
+      <span class="spacer"></span>
+      <button
+        disabled={!passage}
+        class="plus"
+        aria-label={$t("bibleQueueAddHint")}
+        title={$t("bibleQueueAddHint")}
+        onclick={enqueue}>+</button
+      >
+      <button
+        class="primary"
+        class:live={onScreen}
+        disabled={!shown}
+        onclick={project}>{$t("prayerProject")}</button
+      >
     </div>
-    <!-- The slide keeps its size however long the queue gets. -->
     <div class="stage">
       {#if shown}
         <PrayerSlide prayer={shown} onpick={pickWord} />
@@ -522,7 +499,37 @@
         <div class="placeholder"></div>
       {/if}
     </div>
+    {#if shown}
+      <div class="caption">
+        <span class="label">{$t("bibleHighlightHint")}</span>
+        {#if hasMarks}
+          <button class="clear" onclick={clearMarks}
+            >{$t("bibleHighlightClear")}</button
+          >
+        {/if}
+      </div>
+    {/if}
 
+    <!-- What the projector shows right now. -->
+    <div class="live-head">
+      <span class="label">{$t("bibleLive")}</span>
+    </div>
+    <div class="stage">
+      {#if $isBlackout}
+        <div class="live-empty">{$t("blackout")}</div>
+      {:else if $currentPrayer}
+        <PrayerSlide prayer={$currentPrayer} />
+      {:else}
+        <div class="live-empty">
+          {$currentImage || $currentVideo
+            ? $t("bibleLiveOther")
+            : $t("bibleLiveNone")}
+        </div>
+      {/if}
+    </div>
+  </section>
+
+  <section class="queue">
     <QueueList
       items={$bibleQueue}
       {selectedId}
@@ -538,21 +545,51 @@
 
 <style>
   .bible {
+    /* Two slides, the preview and the live one, share the column's height: each is
+       as wide as half the window's height allows (16:9), and the queue takes the
+       rest of the width. */
+    --stage-w: max(18rem, calc((100vh - 14rem) / 2 * 16 / 9));
     flex: 1;
     min-height: 0;
     display: grid;
-    grid-template-columns: minmax(19rem, 28rem) minmax(0, 1fr);
+    /* The queue gets a column of its own, so the preview keeps the full width of
+       its column and the queue is always in view. */
+    grid-template-columns:
+      minmax(19rem, 28rem) minmax(0, var(--stage-w))
+      minmax(15rem, 1fr);
+    grid-template-areas: "left preview queue";
     gap: 1.25rem;
     padding: 1rem;
     overflow: hidden;
   }
 
-  /* A narrow window stacks the two sections and scrolls instead of squeezing. */
+  /* Without the room for three columns the queue goes under the preview. */
+  @media (max-width: 1300px) {
+    .bible {
+      grid-template-columns: minmax(19rem, 28rem) minmax(0, 1fr);
+      grid-template-rows: auto minmax(12rem, 1fr);
+      grid-template-areas:
+        "left preview"
+        "left queue";
+      overflow-y: auto;
+    }
+  }
+
+  /* A narrow window stacks the sections and scrolls instead of squeezing. */
   @media (max-width: 760px) {
     .bible {
       grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: none;
+      grid-template-areas:
+        "left"
+        "preview"
+        "queue";
       grid-auto-rows: min-content;
       overflow-y: auto;
+    }
+
+    .queue {
+      min-height: 14rem;
     }
 
     .browser {
@@ -562,6 +599,7 @@
   }
 
   .left {
+    grid-area: left;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -645,40 +683,6 @@
   button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-  }
-
-  .modes {
-    display: flex;
-  }
-
-  .modes button {
-    border-radius: 0;
-  }
-
-  .modes button:first-child {
-    border-radius: 6px 0 0 6px;
-  }
-
-  .modes button:not(:first-child) {
-    margin-left: -1px;
-  }
-
-  .modes button:last-child {
-    border-radius: 0 6px 6px 0;
-  }
-
-  .modes button.active {
-    position: relative;
-    border-color: var(--accent);
-    color: var(--accent);
   }
 
   .primary {
@@ -835,19 +839,52 @@
   }
 
   .preview {
+    grid-area: preview;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
     min-width: 0;
     min-height: 0;
+    overflow-x: hidden;
     overflow-y: auto;
+  }
+
+  .queue {
+    grid-area: queue;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    /* Level with the top of the preview, no gap above the list. */
+    --queue-gap: 0;
   }
 
   .preview-head {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 0.25rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .spacer {
+    flex: 1;
+  }
+
+  .preview-head button {
+    min-width: 6.5rem;
+  }
+
+  .preview-head .plus {
+    min-width: 0;
+    width: 2rem;
+    padding: 0;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  .caption {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
 
   .clear {
@@ -856,8 +893,29 @@
     font-size: 0.8rem;
   }
 
-  .stage {
+  .stage,
+  .preview-head,
+  .caption,
+  .live-head {
     flex: none;
+    width: min(100%, var(--stage-w));
+    margin-inline: auto;
+  }
+
+  .live-head {
+    margin-top: 0.5rem;
+  }
+
+  /* Nothing to draw on the projector: a black rectangle that says why. */
+  .live-empty {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: #000;
+    color: var(--muted);
+    font-size: 0.8rem;
   }
 
   .placeholder {

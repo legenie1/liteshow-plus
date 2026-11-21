@@ -29,9 +29,7 @@
 
 <div class="box">
   <div class="head">
-    <span class="label">{$t("queueTitle", { n: items.length })}</span>
     {#if items.length > 0}
-      <span class="label">{$t("queueHint")}</span>
       <button class="clear" onclick={onclear}>{$t("queueClear")}</button>
     {/if}
   </div>
@@ -79,24 +77,30 @@
 </div>
 
 <style>
+  /* The same rectangle as the list of books. */
   .box {
     display: flex;
     flex: 1 1 0;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.25rem;
+    min-width: 0;
     min-height: var(--queue-min, 6rem);
-    margin-top: 0.75rem;
+    margin-top: var(--queue-gap, 0.75rem);
+    padding: 0.25rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #1c1c1c;
   }
 
   .head {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    justify-content: flex-end;
   }
 
-  .label,
   .empty {
     margin: 0;
+    padding: 0.25rem 0.5rem;
     color: var(--muted);
     font-size: 0.8rem;
   }
@@ -124,7 +128,7 @@
 
   .clear {
     height: 1.6rem;
-    margin-left: auto;
+    white-space: nowrap;
     font-size: 0.8rem;
   }
 
@@ -132,10 +136,10 @@
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: 3px;
+    gap: 1px;
     min-height: 0;
     margin: 0;
-    padding: 0 0.25rem 0 0;
+    padding: 0;
     overflow-x: hidden;
     overflow-y: auto;
     list-style: none;
@@ -149,18 +153,23 @@
     align-items: stretch;
     gap: 3px;
     min-width: 0;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: #1c1c1c;
+    overflow: hidden;
+    border-radius: 4px;
+    background: transparent;
   }
 
+  li:hover {
+    background: var(--surface);
+  }
+
+  /* Previewed, like the chosen book. */
   li.selected {
-    border-color: var(--muted);
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
   }
 
+  /* On the projector: a bar on the left, whatever else the row is doing. */
   li.live {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    box-shadow: inset 3px 0 0 var(--accent);
   }
 
   .main {
