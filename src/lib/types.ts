@@ -9,6 +9,16 @@ export interface PrayerPoint {
   reference: string;
   verse: string;
   footer: string;
+  /** Bible passage: drawn on the scripture background. */
+  scripture?: boolean;
+  /** One block per translation, for the "split" Bible template. */
+  passages?: Passage[];
+}
+
+/** A translation's verses under their own label, e.g. "Genesis 1:16 (KJV)". */
+export interface Passage {
+  label: string;
+  verse: string;
 }
 
 export interface VideoFile {

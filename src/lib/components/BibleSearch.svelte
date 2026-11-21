@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { currentPrayer, selectPrayer } from "$lib/stores/projection";
-  import { prayerDraft } from "$lib/stores/prayer";
   import {
+    bibleLayout,
     bibleMode,
     bibleQuery,
     loadBible,
@@ -49,10 +49,9 @@
   const query = $derived($bibleQuery.trim());
   const reference = $derived(parseReference(query));
   const partial = $derived(parsePartial($bibleQuery));
-  // The footer is shared with the Prayer tab so both look like the same service.
   const passage = $derived(
     reference && texts
-      ? buildPassage(reference, $bibleMode, texts, $prayerDraft.footer)
+      ? buildPassage(reference, $bibleMode, texts, $bibleLayout)
       : null,
   );
   const onScreen = $derived(

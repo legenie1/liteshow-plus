@@ -25,6 +25,7 @@
     t,
     type Language,
   } from "$lib/i18n";
+  import SettingsMenu from "$lib/components/SettingsMenu.svelte";
   import type { ImageFile, MonitorInfo, VideoFile } from "$lib/types";
 
   let error = $state<string | null>(null);
@@ -220,6 +221,8 @@
   >
     {$t("blackout")} <kbd>B</kbd>
   </button>
+
+  <SettingsMenu />
 </header>
 
 <style>

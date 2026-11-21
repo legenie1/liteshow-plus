@@ -5,6 +5,13 @@ export type BibleText = string[][][];
 
 export type BibleMode = "en" | "fr" | "both";
 
+/**
+ * How a two-language passage is laid out: "stacked" keeps one heading and the
+ * verses one after the other, "split" gives each translation its own labelled block.
+ */
+export type BibleLayout = "stacked" | "split";
+export const BIBLE_LAYOUTS: BibleLayout[] = ["stacked", "split"];
+
 export interface Reference {
   book: number;
   chapter: number;
@@ -397,7 +404,7 @@ export function buildPassage(
   ref: Reference,
   mode: BibleMode,
   texts: { en: BibleText; fr: BibleText },
-  footer: string,
+  layout: BibleLayout = "stacked",
 ): PrayerPoint | null {
   const en = getVerses(texts.en, ref);
   const fr = getVerses(texts.fr, ref);
@@ -422,6 +429,16 @@ export function buildPassage(
     text: [...new Set(parts.map((p) => p.heading))].join(" · "),
     reference: parts.map((p) => p.version).join(" · "),
     verse: parts.map((p) => p.verse).join("\n\n"),
-    footer,
+    // No service footer under scripture: the verse gets the whole slide.
+    footer: "",
+    scripture: true,
+    // The split template covers one translation as well as two.
+    passages:
+      layout === "split"
+        ? parts.map((p) => ({
+            label: `${p.heading} (${p.version})`,
+            verse: p.verse,
+          }))
+        : [],
   };
 }

@@ -1,5 +1,6 @@
 <script lang="ts">
   import background from "../../assets/background.jpg";
+  import scriptureBackground from "../../assets/scripture_bg.png";
   import { splitFooter } from "$lib/prayer";
   import type { PrayerPoint } from "$lib/types";
 
@@ -25,9 +26,12 @@
     }
   }
 
+  // The Bible's "split" template: one labelled block per translation.
+  const passages = $derived(prayer.passages ?? []);
+
   $effect(() => {
     // Read the fields so the effect re-runs when any of them changes.
-    void [prayer.text, prayer.reference, prayer.verse, content];
+    void [prayer.text, prayer.reference, prayer.verse, passages, content];
     fit();
   });
 
@@ -39,24 +43,45 @@
   });
 </script>
 
-<div bind:this={slide} class="slide" style:--background="url({background})">
+<div
+  bind:this={slide}
+  class="slide"
+  class:scripture-slide={prayer.scripture}
+  style:--background="url({prayer.scripture
+    ? scriptureBackground
+    : background})"
+>
   {#if prayer.number.trim()}
     <span class="badge">{prayer.number.trim()}</span>
   {/if}
 
-  <div bind:this={content} class="content">
-    <p class="title">{prayer.text.trim()}</p>
-    {#if prayer.reference.trim() || prayer.verse.trim()}
-      <div class="scripture">
-        {#if prayer.reference.trim()}
-          <p class="reference">{prayer.reference.trim()}</p>
-        {/if}
-        {#if prayer.verse.trim()}
-          <p class="verse">{prayer.verse.trim()}</p>
-        {/if}
+  {#if passages.length > 0}
+    <div bind:this={content} class="content split">
+      <!-- Auto margins centre the blocks, yet let a long text overflow downwards
+           so the fit loop can measure it (centring with flex would hide the top). -->
+      <div class="blocks">
+        {#each passages as passage, index (index)}
+          {#if index > 0}<hr />{/if}
+          <span class="pill">{passage.label}</span>
+          <p class="split-verse">{passage.verse.trim()}</p>
+        {/each}
       </div>
-    {/if}
-  </div>
+    </div>
+  {:else}
+    <div bind:this={content} class="content">
+      <p class="title">{prayer.text.trim()}</p>
+      {#if prayer.reference.trim() || prayer.verse.trim()}
+        <div class="scripture">
+          {#if prayer.reference.trim()}
+            <p class="reference">{prayer.reference.trim()}</p>
+          {/if}
+          {#if prayer.verse.trim()}
+            <p class="verse">{prayer.verse.trim()}</p>
+          {/if}
+        </div>
+      {/if}
+    </div>
+  {/if}
 
   {#if prayer.footer.trim()}
     <p class="footer">
@@ -82,6 +107,60 @@
     font-family: Bahnschrift, "Arial Narrow", "Segoe UI", sans-serif;
     font-stretch: 75%;
     text-shadow: 0 0.15cqw 0.5cqw rgba(0, 0, 0, 0.45);
+  }
+
+  /* The chalkboard is already dark: no veil. The logo sits in the top-right corner. */
+  .scripture-slide {
+    background: #1d1d1d var(--background) center / cover no-repeat;
+  }
+
+  .scripture-slide .content {
+    right: 15cqw;
+  }
+
+  /* Split template: centred, the text clear of the logo on both sides. */
+  .content.split {
+    top: 8cqw;
+    bottom: 6cqw;
+    left: 8cqw;
+    right: 8cqw;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .blocks {
+    margin: auto 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    font-family: "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+    font-stretch: normal;
+  }
+
+  .pill {
+    padding: calc(0.5cqw * var(--fit, 1)) calc(2cqw * var(--fit, 1));
+    border-radius: 0.6cqw;
+    background: #f5c400;
+    color: #1a1a1a;
+    font-size: calc(2.3cqw * var(--fit, 1));
+    font-weight: 800;
+    text-transform: uppercase;
+    text-shadow: none;
+  }
+
+  .split-verse {
+    margin-top: calc(1.2cqw * var(--fit, 1));
+    font-size: calc(3.1cqw * var(--fit, 1));
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  hr {
+    width: 100%;
+    margin: calc(1.6cqw * var(--fit, 1)) 0;
+    border: none;
+    border-top: 0.12cqw solid rgba(255, 255, 255, 0.25);
   }
 
   .badge {

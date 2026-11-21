@@ -1,5 +1,10 @@
 import { writable } from "svelte/store";
-import type { BibleMode, BibleText } from "$lib/bible";
+import {
+  BIBLE_LAYOUTS,
+  type BibleLayout,
+  type BibleMode,
+  type BibleText,
+} from "$lib/bible";
 import enUrl from "../../assets/bible/kjv.json?url";
 import frUrl from "../../assets/bible/jnd.json?url";
 
@@ -20,6 +25,28 @@ export const bibleMode = writable<BibleMode>(readMode());
 bibleMode.subscribe((mode) => {
   try {
     localStorage.setItem(MODE_KEY, mode);
+  } catch {
+    // Same acceptable degradation as the remembered monitor.
+  }
+});
+
+const LAYOUT_KEY = "liteshow.bibleLayout";
+
+function readLayout(): BibleLayout {
+  try {
+    const stored = localStorage.getItem(LAYOUT_KEY);
+    if (BIBLE_LAYOUTS.includes(stored as BibleLayout))
+      return stored as BibleLayout;
+  } catch {
+    // Same acceptable degradation as the remembered monitor.
+  }
+  return "stacked";
+}
+
+export const bibleLayout = writable<BibleLayout>(readLayout());
+bibleLayout.subscribe((layout) => {
+  try {
+    localStorage.setItem(LAYOUT_KEY, layout);
   } catch {
     // Same acceptable degradation as the remembered monitor.
   }

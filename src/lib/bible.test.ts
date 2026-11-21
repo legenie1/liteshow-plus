@@ -289,39 +289,49 @@ describe("buildPassage", () => {
   const ref = { book: JOHN, chapter: 3, from: 1, to: 1 };
 
   it("stacks both languages on one slide", () => {
-    expect(buildPassage(ref, "both", texts, "f")).toEqual({
+    expect(buildPassage(ref, "both", texts)).toEqual({
       number: "",
       text: "John 3:1 · Jean 3:1",
       reference: "KJV · Darby",
       verse: "en1\n\nfr1",
-      footer: "f",
+      footer: "",
+      scripture: true,
+      passages: [],
     });
   });
 
+  it("gives each translation its own block in the split template", () => {
+    expect(buildPassage(ref, "both", texts, "split")?.passages).toEqual([
+      { label: "John 3:1 (KJV)", verse: "en1" },
+      { label: "Jean 3:1 (Darby)", verse: "fr1" },
+    ]);
+    expect(buildPassage(ref, "en", texts, "split")?.passages).toEqual([
+      { label: "John 3:1 (KJV)", verse: "en1" },
+    ]);
+  });
+
   it("keeps one language when asked", () => {
-    expect(buildPassage(ref, "fr", texts, "")?.verse).toBe("fr1");
-    expect(buildPassage(ref, "en", texts, "")?.reference).toBe("KJV");
+    expect(buildPassage(ref, "fr", texts)?.verse).toBe("fr1");
+    expect(buildPassage(ref, "en", texts)?.reference).toBe("KJV");
   });
 
   it("numbers the verses of a range", () => {
     const range = { ...ref, to: 2 };
-    expect(buildPassage(range, "en", texts, "")?.verse).toBe("1 en1 2 en2");
+    expect(buildPassage(range, "en", texts)?.verse).toBe("1 en1 2 en2");
   });
 
   it("shows the other language alone when one translation lacks the verse", () => {
     texts.fr[JOHN] = [[], [], ["fr1"]];
     const second = { ...ref, from: 2, to: 2 };
-    expect(buildPassage(second, "both", texts, "")?.verse).toBe("en2");
-    expect(
-      buildPassage({ ...ref, from: 9, to: 9 }, "both", texts, ""),
-    ).toBeNull();
+    expect(buildPassage(second, "both", texts)?.verse).toBe("en2");
+    expect(buildPassage({ ...ref, from: 9, to: 9 }, "both", texts)).toBeNull();
   });
 
   it("doesn't repeat a heading that is the same in both languages", () => {
     const job = { book: 17, chapter: 1, from: 1, to: 1 };
     texts.en[17] = [["a"]];
     texts.fr[17] = [["b"]];
-    expect(buildPassage(job, "both", texts, "")?.text).toBe("Job 1:1");
+    expect(buildPassage(job, "both", texts)?.text).toBe("Job 1:1");
   });
 });
 

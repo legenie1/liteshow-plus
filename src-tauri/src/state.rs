@@ -12,6 +12,19 @@ pub struct PrayerPoint {
     pub reference: String,
     pub verse: String,
     pub footer: String,
+    /// Bible passage: the slide uses the scripture background.
+    #[serde(default)]
+    pub scripture: bool,
+    /// One block per translation, for the "split" Bible template; empty otherwise.
+    #[serde(default)]
+    pub passages: Vec<Passage>,
+}
+
+/// A translation's verses under their own label, e.g. "Genesis 1:16 (KJV)".
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Passage {
+    pub label: String,
+    pub verse: String,
 }
 
 #[derive(Default)]
