@@ -102,6 +102,7 @@ export function sectionPassage(
     reference: section.label ? `${song.title} · ${section.label}` : song.title,
     verse: "",
     footer,
+    kind: "lyrics",
   };
 }
 

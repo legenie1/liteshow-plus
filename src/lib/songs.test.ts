@@ -126,6 +126,7 @@ describe("sectionPassage", () => {
       reference: "Test Song · Chorus",
       verse: "",
       footer: "f",
+      kind: "lyrics",
     });
   });
 });

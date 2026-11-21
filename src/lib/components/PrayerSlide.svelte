@@ -1,7 +1,8 @@
 <script lang="ts">
-  import background from "../../assets/background.jpg";
-  import scriptureBackground from "../../assets/scripture_bg.png";
+  import { BACKGROUND_INFO } from "$lib/backgrounds";
   import { splitFooter } from "$lib/prayer";
+  import { TEXT_SCALE } from "$lib/settings";
+  import { slideSettings } from "$lib/stores/settings";
   import type { PrayerPoint } from "$lib/types";
 
   interface Props {
@@ -9,6 +10,15 @@
   }
 
   const { prayer }: Props = $props();
+
+  // The settings decide the background, the footer and (for the Bible) the text size.
+  const kind = $derived(prayer.kind || "prayer");
+  const backgroundId = $derived($slideSettings.backgrounds[kind]);
+  const background = $derived(BACKGROUND_INFO[backgroundId]);
+  const showFooter = $derived($slideSettings.footers[kind]);
+  const baseScale = $derived(
+    kind === "bible" ? TEXT_SCALE[$slideSettings.bibleTextSize] : 1,
+  );
 
   let slide = $state<HTMLDivElement>();
   let content = $state<HTMLDivElement>();
@@ -18,7 +28,7 @@
   // all the text sizes until the column no longer overflows.
   function fit() {
     if (!content) return;
-    let scale = 1;
+    let scale = baseScale;
     content.style.setProperty("--fit", String(scale));
     while (content.scrollHeight > content.clientHeight + 1 && scale > 0.4) {
       scale -= 0.03;
@@ -31,7 +41,14 @@
 
   $effect(() => {
     // Read the fields so the effect re-runs when any of them changes.
-    void [prayer.text, prayer.reference, prayer.verse, passages, content];
+    void [
+      prayer.text,
+      prayer.reference,
+      prayer.verse,
+      passages,
+      content,
+      baseScale,
+    ];
     fit();
   });
 
@@ -46,10 +63,9 @@
 <div
   bind:this={slide}
   class="slide"
-  class:scripture-slide={prayer.scripture}
-  style:--background="url({prayer.scripture
-    ? scriptureBackground
-    : background})"
+  class:chalkboard={backgroundId === "chalkboard"}
+  style:--background={background.url ? `url(${background.url})` : "none"}
+  style:--veil={background.veil}
 >
   {#if prayer.number.trim()}
     <span class="badge">{prayer.number.trim()}</span>
@@ -83,7 +99,7 @@
     </div>
   {/if}
 
-  {#if prayer.footer.trim()}
+  {#if showFooter && prayer.footer.trim()}
     <p class="footer">
       {#each splitFooter(prayer.footer) as piece, index (index)}{#if piece.accent}<em
             >{piece.text}</em
@@ -99,9 +115,9 @@
     aspect-ratio: 16 / 9;
     container-type: size;
     overflow: hidden;
-    /* A light veil over the picture keeps white text readable on the bright rays. */
+    /* The veil keeps white text readable on a bright picture. */
     background:
-      linear-gradient(rgba(0, 12, 6, 0.32), rgba(0, 12, 6, 0.32)),
+      linear-gradient(var(--veil), var(--veil)),
       #06140c var(--background) center / cover no-repeat;
     color: #fff;
     font-family: Bahnschrift, "Arial Narrow", "Segoe UI", sans-serif;
@@ -109,12 +125,8 @@
     text-shadow: 0 0.15cqw 0.5cqw rgba(0, 0, 0, 0.45);
   }
 
-  /* The chalkboard is already dark: no veil. The logo sits in the top-right corner. */
-  .scripture-slide {
-    background: #1d1d1d var(--background) center / cover no-repeat;
-  }
-
-  .scripture-slide .content {
+  /* The chalkboard has its logo in the top-right corner: keep the text clear. */
+  .chalkboard .content {
     right: 15cqw;
   }
 

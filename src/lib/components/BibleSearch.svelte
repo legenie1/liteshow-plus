@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { currentPrayer, selectPrayer } from "$lib/stores/projection";
+  import { prayerDraft } from "$lib/stores/prayer";
   import {
     bibleLayout,
     bibleMode,
@@ -51,7 +52,13 @@
   const partial = $derived(parsePartial($bibleQuery));
   const passage = $derived(
     reference && texts
-      ? buildPassage(reference, $bibleMode, texts, $bibleLayout)
+      ? buildPassage(
+          reference,
+          $bibleMode,
+          texts,
+          $prayerDraft.footer,
+          $bibleLayout,
+        )
       : null,
   );
   const onScreen = $derived(

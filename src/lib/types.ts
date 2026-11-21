@@ -3,14 +3,16 @@ export interface ImageFile {
   path: string;
 }
 
+export type SlideKind = "prayer" | "bible" | "dictionary" | "lyrics";
+
 export interface PrayerPoint {
   number: string;
   text: string;
   reference: string;
   verse: string;
   footer: string;
-  /** Bible passage: drawn on the scripture background. */
-  scripture?: boolean;
+  /** Which tab made the slide: picks its background and footer setting. */
+  kind?: SlideKind;
   /** One block per translation, for the "split" Bible template. */
   passages?: Passage[];
 }

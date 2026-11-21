@@ -103,5 +103,6 @@ export function buildDefinitionPassage(
       .map((d) => (d.partOfSpeech ? `(${d.partOfSpeech}) ${d.text}` : d.text))
       .join("\n\n"),
     footer,
+    kind: "dictionary",
   };
 }

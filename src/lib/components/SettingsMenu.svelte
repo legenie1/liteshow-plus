@@ -1,10 +1,22 @@
 <script lang="ts">
   import { bibleLayout } from "$lib/stores/bible";
+  import {
+    setBackground,
+    setBibleTextSize,
+    setFooter,
+    slideSettings,
+  } from "$lib/stores/settings";
+  import {
+    BACKGROUNDS,
+    KINDS,
+    TEXT_SIZES,
+    type BackgroundId,
+    type TextSize,
+  } from "$lib/settings";
   import type { BibleLayout } from "$lib/bible";
   import { t } from "$lib/i18n";
 
-  // Global settings: one popup for the whole app, one section per kind of slide.
-  // Backgrounds for the Bible, the prayers, etc. will join the sections here.
+  // Global settings: one popup for the whole app, one section per topic.
   let open = $state(false);
   let root = $state<HTMLDivElement>();
 
@@ -15,6 +27,28 @@
   function onWindowKeydown(event: KeyboardEvent) {
     if (open && event.key === "Escape") open = false;
   }
+
+  const kindLabel = {
+    prayer: "tabPrayer",
+    bible: "tabBible",
+    dictionary: "tabDictionary",
+    lyrics: "tabLyrics",
+  } as const;
+
+  const backgroundLabel: Record<
+    BackgroundId,
+    "bgGreen" | "bgChalkboard" | "bgBlack"
+  > = { green: "bgGreen", chalkboard: "bgChalkboard", black: "bgBlack" };
+
+  const sizeLabel: Record<
+    TextSize,
+    "sizeSmall" | "sizeNormal" | "sizeLarge" | "sizeHuge"
+  > = {
+    small: "sizeSmall",
+    normal: "sizeNormal",
+    large: "sizeLarge",
+    huge: "sizeHuge",
+  };
 
   const layouts: {
     layout: BibleLayout;
@@ -49,6 +83,38 @@
   {#if open}
     <div class="popup" role="dialog" aria-label={$t("settings")}>
       <section>
+        <span class="section-title">{$t("settingsBackgrounds")}</span>
+        {#each KINDS as kind (kind)}
+          <label class="row">
+            <span>{$t(kindLabel[kind])}</span>
+            <select
+              value={$slideSettings.backgrounds[kind]}
+              onchange={(event) =>
+                setBackground(kind, event.currentTarget.value as BackgroundId)}
+            >
+              {#each BACKGROUNDS as id (id)}
+                <option value={id}>{$t(backgroundLabel[id])}</option>
+              {/each}
+            </select>
+          </label>
+        {/each}
+      </section>
+
+      <section>
+        <span class="section-title">{$t("settingsFooter")}</span>
+        {#each KINDS as kind (kind)}
+          <label class="row">
+            <span>{$t(kindLabel[kind])}</span>
+            <input
+              type="checkbox"
+              checked={$slideSettings.footers[kind]}
+              onchange={(event) => setFooter(kind, event.currentTarget.checked)}
+            />
+          </label>
+        {/each}
+      </section>
+
+      <section>
         <span class="section-title">{$t("settingsBible")}</span>
         <span class="field-label">{$t("bibleTemplate")}</span>
         <div class="templates">
@@ -81,6 +147,17 @@
               </span>
               <span class="template-name">{$t(label)}</span>
             </button>
+          {/each}
+        </div>
+        <span class="field-label">{$t("settingsBibleTextSize")}</span>
+        <div class="sizes" role="group">
+          {#each TEXT_SIZES as size (size)}
+            <button
+              class:active={$slideSettings.bibleTextSize === size}
+              aria-pressed={$slideSettings.bibleTextSize === size}
+              onclick={() => setBibleTextSize(size)}
+              >{$t(sizeLabel[size])}</button
+            >
           {/each}
         </div>
       </section>
@@ -129,8 +206,10 @@
     z-index: 10;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
-    width: 19rem;
+    gap: 1rem;
+    width: 20rem;
+    max-height: calc(100vh - 5rem);
+    overflow-y: auto;
     padding: 0.75rem;
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -231,6 +310,60 @@
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  select {
+    height: 2rem;
+    padding: 0 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.8rem;
+  }
+
+  input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--accent);
+  }
+
+  .sizes {
+    display: flex;
+  }
+
+  .sizes button {
+    flex: 1;
+    padding: 0 0.25rem;
+    border-radius: 0;
+    font-size: 0.8rem;
+  }
+
+  .sizes button:first-child {
+    border-radius: 6px 0 0 6px;
+  }
+
+  .sizes button:not(:first-child) {
+    margin-left: -1px;
+  }
+
+  .sizes button:last-child {
+    border-radius: 0 6px 6px 0;
+  }
+
+  .sizes button.active {
+    position: relative;
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .field-label {

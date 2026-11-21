@@ -12,9 +12,10 @@ pub struct PrayerPoint {
     pub reference: String,
     pub verse: String,
     pub footer: String,
-    /// Bible passage: the slide uses the scripture background.
+    /// Which tab made the slide ("prayer", "bible", "dictionary", "lyrics"; empty =
+    /// prayer). The windows read it to pick the background and the footer setting.
     #[serde(default)]
-    pub scripture: bool,
+    pub kind: String,
     /// One block per translation, for the "split" Bible template; empty otherwise.
     #[serde(default)]
     pub passages: Vec<Passage>,

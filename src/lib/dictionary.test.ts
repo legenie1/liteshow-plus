@@ -122,6 +122,7 @@ describe("buildDefinitionPassage", () => {
       reference: "/ɡɹeɪs/",
       verse: "(noun) Unmerited favour.\n\n(verb) To honour.",
       footer: "f",
+      kind: "dictionary",
     });
   });
 
