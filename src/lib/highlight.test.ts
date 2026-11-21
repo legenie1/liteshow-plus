@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   applyMarks,
+  blocksOf,
+  hasHighlight,
+  markedWords,
   markPassage,
   markRange,
   toggleWord,
@@ -95,5 +98,25 @@ describe("markPassage", () => {
 
   it("passes null through", () => {
     expect(markPassage(null, [])).toBeNull();
+  });
+});
+
+describe("reading the marks back", () => {
+  it("gives the highlighted words of a block", () => {
+    expect(markedWords("In ⟦the beginning⟧ God ⟦said⟧")).toEqual([1, 2, 4]);
+    expect(markedWords("plain")).toEqual([]);
+  });
+
+  it("round-trips through applyMarks", () => {
+    const text = applyMarks("a b c d e", new Set([1, 2, 4]));
+    expect(markedWords(text)).toEqual([1, 2, 4]);
+  });
+
+  it("lists the blocks and tells whether any word is highlighted", () => {
+    const base = { number: "", text: "t", reference: "", verse: "a ⟦b⟧" };
+    expect(blocksOf(base)).toEqual(["a ⟦b⟧"]);
+    expect(hasHighlight(base)).toBe(true);
+    expect(hasHighlight({ ...base, verse: "a b" })).toBe(false);
+    expect(hasHighlight(null)).toBe(false);
   });
 });

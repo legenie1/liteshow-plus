@@ -24,15 +24,17 @@
     type BibleMode,
     type SearchHit,
   } from "$lib/bible";
-  import { markPassage, markRange, toggleWord } from "$lib/highlight";
-  import { snippet, type QueueItem } from "$lib/queue";
   import {
-    bibleQueue,
-    queueAdd,
-    queueClear,
-    queueMove,
-    queueRemove,
-  } from "$lib/stores/queue";
+    blocksOf,
+    hasHighlight,
+    markedWords,
+    markPassage,
+    markRange,
+    toggleWord,
+  } from "$lib/highlight";
+  import type { QueueItem } from "$lib/queue";
+  import { bibleQueue } from "$lib/stores/queue";
+  import QueueList from "$lib/components/QueueList.svelte";
   import { language, t } from "$lib/i18n";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
 
@@ -69,7 +71,6 @@
     anchor: { block: number; word: number } | null;
   }>({ key: "", sets: [], anchor: null });
   const currentMarks = $derived(marks.key === markKey ? marks.sets : []);
-  const hasMarks = $derived(currentMarks.some((set) => set?.length));
 
   const plainPassage = $derived(
     reference && texts
@@ -89,6 +90,11 @@
   });
 
   const shown = $derived(selected ? selected.passage : passage);
+  const hasMarks = $derived(hasHighlight(shown));
+  // Where the last click landed in a queued slide, for Shift+click.
+  let queueAnchor = $state<{ id: string; block: number; word: number } | null>(
+    null,
+  );
   const onScreen = $derived(
     shown !== null &&
       $currentPrayer !== null &&
@@ -208,21 +214,34 @@
     JSON.stringify($currentPrayer) === JSON.stringify(item.passage);
 
   function enqueue() {
-    if (passage) queueAdd(passage);
+    if (passage) bibleQueue.add(passage);
   }
 
   // A click on a word highlights it (or removes it), Shift+click a whole stretch.
   // A passage already on the projector is updated at once.
   async function pickWord(block: number, word: number, shift: boolean) {
     const wasLive = onScreen;
-    const sets = Array.from(currentMarks, (set) => set ?? []);
-    while (sets.length <= block) sets.push([]);
-    const anchor = marks.key === markKey ? marks.anchor : null;
-    sets[block] =
-      shift && anchor?.block === block
-        ? markRange(sets[block], anchor.word, word)
-        : toggleWord(sets[block], word);
-    marks = { key: markKey, sets, anchor: { block, word } };
+    if (selected) {
+      // A queued slide is edited in place: its marks are read back from its text.
+      const sets = blocksOf(selected.passage).map(markedWords);
+      const anchor = queueAnchor?.id === selected.id ? queueAnchor : null;
+      sets[block] =
+        shift && anchor?.block === block
+          ? markRange(sets[block], anchor.word, word)
+          : toggleWord(sets[block], word);
+      const edited = markPassage(selected.passage, sets);
+      if (edited) bibleQueue.replace(selected.id, edited);
+      queueAnchor = { id: selected.id, block, word };
+    } else {
+      const sets = Array.from(currentMarks, (set) => set ?? []);
+      while (sets.length <= block) sets.push([]);
+      const anchor = marks.key === markKey ? marks.anchor : null;
+      sets[block] =
+        shift && anchor?.block === block
+          ? markRange(sets[block], anchor.word, word)
+          : toggleWord(sets[block], word);
+      marks = { key: markKey, sets, anchor: { block, word } };
+    }
     if (wasLive) {
       await tick();
       project();
@@ -231,7 +250,13 @@
 
   async function clearMarks() {
     const wasLive = onScreen;
-    marks = { key: markKey, sets: [], anchor: null };
+    if (selected) {
+      const cleared = markPassage(selected.passage, []);
+      if (cleared) bibleQueue.replace(selected.id, cleared);
+      queueAnchor = null;
+    } else {
+      marks = { key: markKey, sets: [], anchor: null };
+    }
     if (wasLive) {
       await tick();
       project();
@@ -338,7 +363,7 @@
       <button
         disabled={!passage}
         title={$t("bibleQueueAddHint")}
-        onclick={enqueue}>{$t("bibleQueueAdd")}</button
+        onclick={enqueue}>{$t("queueAdd")}</button
       >
       <button
         class="primary"
@@ -462,7 +487,7 @@
   <section class="preview">
     <div class="preview-head">
       <span class="label">{$t("prayerPreview")}</span>
-      {#if passage && !selected}
+      {#if shown}
         <span class="label">{$t("bibleHighlightHint")}</span>
         {#if hasMarks}
           <button class="clear" onclick={clearMarks}
@@ -474,61 +499,22 @@
     <!-- The slide keeps its size however long the queue gets. -->
     <div class="stage">
       {#if shown}
-        <PrayerSlide prayer={shown} onpick={selected ? undefined : pickWord} />
+        <PrayerSlide prayer={shown} onpick={pickWord} />
       {:else}
         <div class="placeholder"></div>
       {/if}
     </div>
 
-    <div class="queue-head">
-      <span class="label"
-        >{$t("bibleQueueTitle", { n: $bibleQueue.length })}</span
-      >
-      {#if $bibleQueue.length > 0}
-        <span class="label">{$t("bibleQueueHint")}</span>
-        <button class="clear" onclick={queueClear}
-          >{$t("bibleQueueClear")}</button
-        >
-      {/if}
-    </div>
-    {#if $bibleQueue.length === 0}
-      <p class="message">{$t("bibleQueueEmpty")}</p>
-    {:else}
-      <ol class="queue">
-        {#each $bibleQueue as item, index (item.id)}
-          <li class:live={isLive(item)} class:selected={item.id === selectedId}>
-            <button
-              class="queue-main"
-              onclick={() => (selectedId = item.id)}
-              ondblclick={() => selectPrayer(item.passage)}
-            >
-              <span class="q-title">{item.passage.text}</span>
-              <span class="q-snippet">{snippet(item.passage)}</span>
-            </button>
-            <button
-              class="icon"
-              disabled={index === 0}
-              aria-label={$t("bibleQueueUp")}
-              title={$t("bibleQueueUp")}
-              onclick={() => queueMove(item.id, -1)}>↑</button
-            >
-            <button
-              class="icon"
-              disabled={index === $bibleQueue.length - 1}
-              aria-label={$t("bibleQueueDown")}
-              title={$t("bibleQueueDown")}
-              onclick={() => queueMove(item.id, 1)}>↓</button
-            >
-            <button
-              class="icon"
-              aria-label={$t("bibleQueueRemove")}
-              title={$t("bibleQueueRemove")}
-              onclick={() => queueRemove(item.id)}>✕</button
-            >
-          </li>
-        {/each}
-      </ol>
-    {/if}
+    <QueueList
+      items={$bibleQueue}
+      {selectedId}
+      {isLive}
+      onselect={(id) => (selectedId = id)}
+      onproject={(item) => selectPrayer(item.passage)}
+      onmove={bibleQueue.move}
+      onremove={bibleQueue.remove}
+      onclear={bibleQueue.clear}
+    />
   </section>
 </div>
 
@@ -852,95 +838,8 @@
     font-size: 0.8rem;
   }
 
-  .queue-head {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-top: 0.75rem;
-  }
-
   .stage {
     flex: none;
-  }
-
-  /* The list takes the room left under the slide and scrolls inside it, with a
-     thin bar that only shows its thumb. */
-  .queue {
-    display: flex;
-    flex: 1 1 0;
-    flex-direction: column;
-    gap: 3px;
-    min-height: 6rem;
-    margin: 0;
-    padding: 0 0.25rem 0 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    list-style: none;
-    scrollbar-width: thin;
-    scrollbar-color: #3d3d3d transparent;
-  }
-
-  .queue li {
-    flex: none;
-    min-width: 0;
-  }
-
-  .queue li {
-    display: flex;
-    align-items: stretch;
-    gap: 3px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: #1c1c1c;
-  }
-
-  .queue li.selected {
-    border-color: var(--muted);
-  }
-
-  .queue li.live {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 22%, transparent);
-  }
-
-  .queue-main {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.1rem;
-    min-width: 0;
-    height: auto;
-    padding: 0.35rem 0.6rem;
-    border: none;
-    background: transparent;
-    text-align: left;
-  }
-
-  .q-title {
-    color: var(--accent);
-    font-weight: 600;
-  }
-
-  .q-snippet {
-    max-width: 100%;
-    overflow: hidden;
-    color: var(--muted);
-    font-size: 0.8rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .queue .icon {
-    width: 2rem;
-    padding: 0;
-    border: none;
-    background: transparent;
-    color: var(--muted);
-  }
-
-  .queue .icon:hover:not(:disabled) {
-    color: var(--text);
   }
 
   .placeholder {

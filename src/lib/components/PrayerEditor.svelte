@@ -19,7 +19,10 @@
   } from "$lib/prayer";
   import { language, t } from "$lib/i18n";
   import type { PrayerPoint } from "$lib/types";
+  import type { QueueItem } from "$lib/queue";
+  import { prayerQueue } from "$lib/stores/queue";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
+  import QueueList from "$lib/components/QueueList.svelte";
 
   let textArea = $state<HTMLTextAreaElement>();
 
@@ -122,23 +125,46 @@
     { mode: "both", label: "bibleBoth" },
   ];
 
-  const projectable = $derived(canProject($prayerDraft));
+  // A click on a queued point only previews it; a double click projects it. Typing
+  // in the form goes back to the point being written.
+  let selectedId = $state<string | null>(null);
+  const selected = $derived(
+    $prayerQueue.find((item) => item.id === selectedId) ?? null,
+  );
+  $effect(() => {
+    void $prayerDraft;
+    selectedId = null;
+  });
+
+  const shown = $derived(selected ? selected.passage : $prayerDraft);
+  const projectable = $derived(canProject(shown));
+  const queueable = $derived(canProject($prayerDraft));
   const onScreen = $derived(
     $currentPrayer !== null &&
-      JSON.stringify($currentPrayer) === JSON.stringify($prayerDraft),
+      JSON.stringify($currentPrayer) === JSON.stringify(shown),
   );
+  const isLive = (item: QueueItem) =>
+    $currentPrayer !== null &&
+    JSON.stringify($currentPrayer) === JSON.stringify(item.passage);
 
-  function project() {
-    if (!projectable) return;
-    const prayer = { ...$prayerDraft };
+  function projectPoint(point: PrayerPoint) {
+    const prayer = { ...point };
     selectPrayer(prayer);
     prayerHistory.update((h) => addToHistory(h, prayer));
+  }
+
+  function project() {
+    if (projectable) projectPoint(shown);
+  }
+
+  function enqueue() {
+    if (queueable) prayerQueue.add({ ...$prayerDraft });
   }
 
   // Loads a past point back into the form (to tweak it) and puts it on screen.
   function reproject(prayer: PrayerPoint) {
     prayerDraft.set({ ...prayer });
-    project();
+    projectPoint(prayer);
   }
 
   function next() {
@@ -157,7 +183,8 @@
   function onKeydown(event: KeyboardEvent) {
     if (event.ctrlKey && event.key === "Enter") {
       event.preventDefault();
-      project();
+      if (event.shiftKey) enqueue();
+      else project();
     }
   }
 </script>
@@ -250,6 +277,11 @@
         disabled={!projectable}
         onclick={project}>{$t("prayerProject")}</button
       >
+      <button
+        disabled={!queueable}
+        title={$t("prayerQueueAddHint")}
+        onclick={enqueue}>{$t("queueAdd")}</button
+      >
       <button onclick={next}>{$t("prayerNext")}</button>
       <button onclick={clear}>{$t("prayerClear")}</button>
       <span class="hint">{$t("prayerHint")}</span>
@@ -283,7 +315,17 @@
 
   <div class="preview">
     <span class="preview-label">{$t("prayerPreview")}</span>
-    <PrayerSlide prayer={$prayerDraft} />
+    <PrayerSlide prayer={shown} />
+    <QueueList
+      items={$prayerQueue}
+      {selectedId}
+      {isLive}
+      onselect={(id) => (selectedId = id)}
+      onproject={(item) => projectPoint(item.passage)}
+      onmove={prayerQueue.move}
+      onremove={prayerQueue.remove}
+      onclear={prayerQueue.clear}
+    />
   </div>
 </div>
 
@@ -476,5 +518,7 @@
     flex-direction: column;
     gap: 0.3rem;
     min-width: 0;
+    /* The page scrolls, so the queue gets a fixed room of its own. */
+    --queue-min: 12rem;
   }
 </style>

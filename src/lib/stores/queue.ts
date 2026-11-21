@@ -4,41 +4,51 @@ import {
   moveItem,
   parseQueue,
   removeItem,
+  updateItem,
   type QueueItem,
 } from "$lib/queue";
 import type { PrayerPoint } from "$lib/types";
 
-const KEY = "liteshow.bibleQueue";
-
-function read(): QueueItem[] {
-  try {
-    return parseQueue(localStorage.getItem(KEY));
-  } catch {
-    return [];
-  }
-}
-
-/** The verses lined up for the service; kept across restarts, so they can be prepared the day before. */
-export const bibleQueue = writable<QueueItem[]>(read());
-
-bibleQueue.subscribe((queue) => {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(queue));
-  } catch {
-    // Same acceptable degradation as the remembered monitor.
-  }
-});
-
 let counter = 0;
 const newId = () => `${Date.now().toString(36)}-${(counter++).toString(36)}`;
 
-export const queueAdd = (passage: PrayerPoint) =>
-  bibleQueue.update((queue) => addItem(queue, passage, newId()));
+/**
+ * A queue of slides kept in `localStorage`, so it survives restarts and can be
+ * prepared the day before. It is a store (`$queue` works) with its operations.
+ */
+function createQueue(key: string) {
+  let initial: QueueItem[] = [];
+  try {
+    initial = parseQueue(localStorage.getItem(key));
+  } catch {
+    // No storage: start empty.
+  }
+  const { subscribe, update, set } = writable<QueueItem[]>(initial);
 
-export const queueRemove = (id: string) =>
-  bibleQueue.update((queue) => removeItem(queue, id));
+  subscribe((queue) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(queue));
+    } catch {
+      // Same acceptable degradation as the remembered monitor.
+    }
+  });
 
-export const queueMove = (id: string, delta: -1 | 1) =>
-  bibleQueue.update((queue) => moveItem(queue, id, delta));
+  return {
+    subscribe,
+    add: (passage: PrayerPoint) =>
+      update((queue) => addItem(queue, passage, newId())),
+    /** Swaps the slide of an item, e.g. after highlighting words in it. */
+    replace: (id: string, passage: PrayerPoint) =>
+      update((queue) => updateItem(queue, id, passage)),
+    remove: (id: string) => update((queue) => removeItem(queue, id)),
+    move: (id: string, delta: -1 | 1) =>
+      update((queue) => moveItem(queue, id, delta)),
+    clear: () => set([]),
+  };
+}
 
-export const queueClear = () => bibleQueue.set([]);
+/** The verses lined up for the service (Bible tab). */
+export const bibleQueue = createQueue("liteshow.bibleQueue");
+
+/** The prayer points lined up for the service (Prayer tab). */
+export const prayerQueue = createQueue("liteshow.prayerQueue");

@@ -103,3 +103,22 @@ export function markPassage(
   }
   return { ...passage, verse: applyMarks(passage.verse, set(0)) };
 }
+
+/** The text of each block of a slide (one for a stacked passage). */
+export function blocksOf(passage: PrayerPoint): string[] {
+  return passage.passages?.length
+    ? passage.passages.map((p) => p.verse)
+    : [passage.verse];
+}
+
+/** The highlighted words of one block, read back from its text. */
+export function markedWords(text: string): number[] {
+  return tokenize(text)
+    .filter((token) => token.word !== null && token.marked)
+    .map((token) => token.word as number);
+}
+
+/** Whether any word of the slide is highlighted. */
+export function hasHighlight(passage: PrayerPoint | null): boolean {
+  return passage !== null && blocksOf(passage).some((t) => t.includes(OPEN));
+}

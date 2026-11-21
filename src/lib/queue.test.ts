@@ -5,6 +5,7 @@ import {
   parseQueue,
   removeItem,
   snippet,
+  updateItem,
   type QueueItem,
 } from "./queue";
 import type { PrayerPoint } from "./types";
@@ -59,6 +60,15 @@ describe("removeItem and moveItem", () => {
     expect(moveItem(queue, "a", -1)).toBe(queue);
     expect(moveItem(queue, "b", 1)).toBe(queue);
     expect(moveItem(queue, "zzz", 1)).toBe(queue);
+  });
+});
+
+describe("updateItem", () => {
+  it("replaces the slide of one item and keeps the order", () => {
+    const queue = updateItem(items("a", "b"), "b", point("b", "new"));
+    expect(queue.map((i) => i.id)).toEqual(["a", "b"]);
+    expect(queue[1].passage.verse).toBe("new");
+    expect(queue[0].passage.verse).toBe("v");
   });
 });
 

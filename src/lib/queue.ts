@@ -24,6 +24,15 @@ export function addItem(
   return [...queue, { id, passage }];
 }
 
+/** Swaps the slide of an item, e.g. after highlighting words in it. */
+export function updateItem(
+  queue: QueueItem[],
+  id: string,
+  passage: PrayerPoint,
+): QueueItem[] {
+  return queue.map((item) => (item.id === id ? { ...item, passage } : item));
+}
+
 export function removeItem(queue: QueueItem[], id: string): QueueItem[] {
   return queue.filter((item) => item.id !== id);
 }
