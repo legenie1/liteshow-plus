@@ -150,7 +150,6 @@
     prayerDraft.update((p) => ({
       ...EMPTY_PRAYER,
       number: p.number,
-      footer: p.footer,
     }));
     textArea?.focus();
   }
@@ -242,11 +241,6 @@
       </div>
       <textarea id="prayer-verse" rows="4" bind:value={$prayerDraft.verse}
       ></textarea>
-    </div>
-
-    <div class="field">
-      <label for="prayer-footer">{$t("prayerFooter")}</label>
-      <input id="prayer-footer" bind:value={$prayerDraft.footer} />
     </div>
 
     <div class="actions">

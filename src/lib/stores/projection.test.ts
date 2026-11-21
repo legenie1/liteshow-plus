@@ -140,7 +140,6 @@ describe("selectPrayer", () => {
     text: "Father, help us",
     reference: "",
     verse: "",
-    footer: "",
   };
 
   it("invokes set_current_prayer and replaces image and video", async () => {

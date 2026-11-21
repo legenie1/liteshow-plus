@@ -8,7 +8,6 @@ export const EMPTY_PRAYER: PrayerPoint = {
   text: "",
   reference: "",
   verse: "",
-  footer: DEFAULT_FOOTER,
 };
 
 /** Splits a footer on its stars: odd pieces are the accented ones. */
@@ -31,14 +30,13 @@ export function stepNumber(value: string, delta: number): string {
   return String(Math.max(1, Number(trimmed) + delta));
 }
 
-/** The next point: next number, empty texts, same footer. */
+/** The next point: next number, empty texts. */
 export function nextPrayer(prayer: PrayerPoint): PrayerPoint {
   return {
     number: stepNumber(prayer.number, 1),
     text: "",
     reference: "",
     verse: "",
-    footer: prayer.footer,
   };
 }
 

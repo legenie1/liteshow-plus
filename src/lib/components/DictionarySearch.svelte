@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { currentPrayer, selectPrayer } from "$lib/stores/projection";
-  import { prayerDraft } from "$lib/stores/prayer";
   import {
     dictionaryLookup,
     dictionaryPicked,
@@ -32,7 +31,7 @@
   );
   const passage = $derived(
     $dictionaryLookup && $dictionaryStatus === "found"
-      ? buildDefinitionPassage($dictionaryLookup, picked, $prayerDraft.footer)
+      ? buildDefinitionPassage($dictionaryLookup, picked)
       : null,
   );
   const onScreen = $derived(

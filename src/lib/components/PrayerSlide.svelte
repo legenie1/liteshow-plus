@@ -19,6 +19,7 @@
   const backgroundId = $derived($slideSettings.backgrounds[kind]);
   const background = $derived(BACKGROUND_INFO[backgroundId]);
   const showFooter = $derived($slideSettings.footers[kind]);
+  const footerText = $derived($slideSettings.footerText.trim());
   const baseScale = $derived(
     kind === "bible" ? TEXT_SCALE[$slideSettings.bibleTextSize] : 1,
   );
@@ -131,9 +132,9 @@
     </div>
   {/if}
 
-  {#if showFooter && prayer.footer.trim()}
+  {#if showFooter && footerText}
     <p class="footer">
-      {#each splitFooter(prayer.footer) as piece, index (index)}{#if piece.accent}<em
+      {#each splitFooter(footerText) as piece, index (index)}{#if piece.accent}<em
             >{piece.text}</em
           >{:else}{piece.text}{/if}{/each}
     </p>

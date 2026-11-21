@@ -111,27 +111,25 @@ describe("buildDefinitionPassage", () => {
 
   it("puts the word in the title and the chosen definitions in the body", () => {
     expect(
-      buildDefinitionPassage(
-        lookup,
-        [lookup.definitions[1], lookup.definitions[2]],
-        "f",
-      ),
+      buildDefinitionPassage(lookup, [
+        lookup.definitions[1],
+        lookup.definitions[2],
+      ]),
     ).toEqual({
       number: "",
       text: "Grace",
       reference: "/ɡɹeɪs/",
       verse: "(noun) Unmerited favour.\n\n(verb) To honour.",
-      footer: "f",
       kind: "dictionary",
     });
   });
 
   it("leaves out the part of speech when the dictionary gives none", () => {
     const bare = { id: "0", partOfSpeech: "", text: "Plain." };
-    expect(buildDefinitionPassage(lookup, [bare], "")?.verse).toBe("Plain.");
+    expect(buildDefinitionPassage(lookup, [bare])?.verse).toBe("Plain.");
   });
 
   it("has nothing to project without a chosen definition", () => {
-    expect(buildDefinitionPassage(lookup, [], "")).toBeNull();
+    expect(buildDefinitionPassage(lookup, [])).toBeNull();
   });
 });

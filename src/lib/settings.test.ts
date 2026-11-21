@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_SETTINGS, parseSettings } from "./settings";
+import { DEFAULT_FOOTER } from "./prayer";
 
 describe("parseSettings", () => {
   it("gives the defaults when nothing is stored", () => {
@@ -23,5 +24,17 @@ describe("parseSettings", () => {
     expect(settings.footers.bible).toBe(true);
     expect(settings.footers.lyrics).toBe(true);
     expect(settings.bibleTextSize).toBe("huge");
+  });
+
+  it("keeps a custom footer text, even an empty one", () => {
+    expect(
+      parseSettings(JSON.stringify({ footerText: "Welcome" })).footerText,
+    ).toBe("Welcome");
+    expect(parseSettings(JSON.stringify({ footerText: "" })).footerText).toBe(
+      "",
+    );
+    expect(parseSettings(JSON.stringify({ footerText: 3 })).footerText).toBe(
+      DEFAULT_FOOTER,
+    );
   });
 });

@@ -105,11 +105,11 @@ describe("sectionKind", () => {
 describe("sectionPassage", () => {
   it("shows only the song's title when the slide has no label", () => {
     expect(
-      sectionPassage(
-        song("Test Song"),
-        { label: "", text: "la", kind: "other" },
-        "",
-      ).reference,
+      sectionPassage(song("Test Song"), {
+        label: "",
+        text: "la",
+        kind: "other",
+      }).reference,
     ).toBe("Test Song");
   });
 
@@ -118,14 +118,12 @@ describe("sectionPassage", () => {
       sectionPassage(
         { ...song("Test Song"), lyrics: "x" },
         { label: "Chorus", text: "la\nlo", kind: "chorus" },
-        "f",
       ),
     ).toEqual({
       number: "",
       text: "la\nlo",
       reference: "Test Song · Chorus",
       verse: "",
-      footer: "f",
       kind: "lyrics",
     });
   });

@@ -1,3 +1,4 @@
+import { DEFAULT_FOOTER } from "$lib/prayer";
 import type { SlideKind } from "$lib/types";
 
 export const KINDS: SlideKind[] = ["prayer", "bible", "dictionary", "lyrics"];
@@ -20,6 +21,8 @@ export interface SlideSettings {
   backgrounds: Record<SlideKind, BackgroundId>;
   /** Whether the footer line is drawn under each kind of slide. */
   footers: Record<SlideKind, boolean>;
+  /** Text between stars is drawn small and yellow. Empty = no footer at all. */
+  footerText: string;
   bibleTextSize: TextSize;
 }
 
@@ -31,6 +34,7 @@ export const DEFAULT_SETTINGS: SlideSettings = {
     lyrics: "green",
   },
   footers: { prayer: true, bible: false, dictionary: true, lyrics: true },
+  footerText: DEFAULT_FOOTER,
   bibleTextSize: "normal",
 };
 
@@ -49,6 +53,7 @@ function pick<T extends string>(
 export function parseSettings(raw: string | null): SlideSettings {
   let data: Record<string, Record<string, unknown>> & {
     bibleTextSize?: unknown;
+    footerText?: unknown;
   } = {};
   try {
     const parsed: unknown = raw ? JSON.parse(raw) : {};
@@ -65,6 +70,10 @@ export function parseSettings(raw: string | null): SlideSettings {
     );
     const footer = data.footers?.[kind];
     if (typeof footer === "boolean") settings.footers[kind] = footer;
+  }
+  // An empty text is a valid choice.
+  if (typeof data.footerText === "string") {
+    settings.footerText = data.footerText;
   }
   settings.bibleTextSize = pick(
     TEXT_SIZES,

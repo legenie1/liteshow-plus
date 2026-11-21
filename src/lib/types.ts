@@ -10,7 +10,6 @@ export interface PrayerPoint {
   text: string;
   reference: string;
   verse: string;
-  footer: string;
   /** Which tab made the slide: picks its background and footer setting. */
   kind?: SlideKind;
   /** One block per translation, for the "split" Bible template. */

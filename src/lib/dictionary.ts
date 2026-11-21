@@ -92,7 +92,6 @@ export async function lookupWord(
 export function buildDefinitionPassage(
   lookup: Lookup,
   picked: Definition[],
-  footer: string,
 ): PrayerPoint | null {
   if (picked.length === 0) return null;
   return {
@@ -102,7 +101,6 @@ export function buildDefinitionPassage(
     verse: picked
       .map((d) => (d.partOfSpeech ? `(${d.partOfSpeech}) ${d.text}` : d.text))
       .join("\n\n"),
-    footer,
     kind: "dictionary",
   };
 }

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { currentPrayer, selectPrayer } from "$lib/stores/projection";
-  import { prayerDraft } from "$lib/stores/prayer";
   import { lyricsSection, lyricsSongId, userSongs } from "$lib/stores/songs";
   import { BUILT_IN_SONGS } from "$lib/hymns";
   import {
@@ -76,9 +75,7 @@
   const selected = $derived(songs.find((s) => s.id === $lyricsSongId) ?? null);
   const sections = $derived(selected ? parseLyrics(selected.lyrics) : []);
   const passages = $derived(
-    selected
-      ? sections.map((s) => sectionPassage(selected, s, $prayerDraft.footer))
-      : [],
+    selected ? sections.map((s) => sectionPassage(selected, s)) : [],
   );
   const preview = $derived(
     $lyricsSection !== null ? (passages[$lyricsSection] ?? null) : null,

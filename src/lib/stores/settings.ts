@@ -9,9 +9,18 @@ import type { SlideKind } from "$lib/types";
 
 const KEY = "liteshow.slideSettings";
 
+// Where the Prayer tab used to keep the footer text.
+const LEGACY_FOOTER_KEY = "liteshow.prayerFooter";
+
 function read(): SlideSettings {
   try {
-    return parseSettings(localStorage.getItem(KEY));
+    const raw = localStorage.getItem(KEY);
+    const settings = parseSettings(raw);
+    if (raw === null) {
+      const legacy = localStorage.getItem(LEGACY_FOOTER_KEY);
+      if (legacy !== null) settings.footerText = legacy;
+    }
+    return settings;
   } catch {
     return parseSettings(null);
   }
@@ -51,6 +60,10 @@ export function setFooter(kind: SlideKind, shown: boolean): void {
     ...s,
     footers: { ...s.footers, [kind]: shown },
   }));
+}
+
+export function setFooterText(text: string): void {
+  slideSettings.update((s) => ({ ...s, footerText: text }));
 }
 
 export function setBibleTextSize(size: TextSize): void {

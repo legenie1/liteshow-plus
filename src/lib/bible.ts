@@ -404,7 +404,6 @@ export function buildPassage(
   ref: Reference,
   mode: BibleMode,
   texts: { en: BibleText; fr: BibleText },
-  footer: string,
   layout: BibleLayout = "stacked",
 ): PrayerPoint | null {
   const en = getVerses(texts.en, ref);
@@ -430,7 +429,6 @@ export function buildPassage(
     text: [...new Set(parts.map((p) => p.heading))].join(" · "),
     reference: parts.map((p) => p.version).join(" · "),
     verse: parts.map((p) => p.verse).join("\n\n"),
-    footer,
     kind: "bible",
     // The split template covers one translation as well as two.
     passages:

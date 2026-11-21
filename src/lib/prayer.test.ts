@@ -32,9 +32,8 @@ describe("nextPrayer", () => {
         text: "a",
         reference: "b",
         verse: "c",
-        footer: "f",
       }),
-    ).toEqual({ number: "3", text: "", reference: "", verse: "", footer: "f" });
+    ).toEqual({ number: "3", text: "", reference: "", verse: "" });
   });
 });
 
@@ -45,7 +44,6 @@ describe("canProject", () => {
       text: " ",
       reference: "Isa 2:2",
       verse: "",
-      footer: "",
     };
     expect(canProject(empty)).toBe(false);
     expect(canProject({ ...empty, text: "Father" })).toBe(true);
@@ -59,7 +57,6 @@ describe("addToHistory", () => {
     text,
     reference: "",
     verse: "",
-    footer: "",
   });
 
   it("puts the newest first", () => {

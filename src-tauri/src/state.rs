@@ -11,7 +11,6 @@ pub struct PrayerPoint {
     pub text: String,
     pub reference: String,
     pub verse: String,
-    pub footer: String,
     /// Which tab made the slide ("prayer", "bible", "dictionary", "lyrics"; empty =
     /// prayer). The windows read it to pick the background and the footer setting.
     #[serde(default)]

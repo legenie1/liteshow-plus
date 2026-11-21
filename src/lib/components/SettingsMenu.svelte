@@ -4,6 +4,7 @@
     setBackground,
     setBibleTextSize,
     setFooter,
+    setFooterText,
     slideSettings,
   } from "$lib/stores/settings";
   import {
@@ -102,6 +103,15 @@
 
       <section>
         <span class="section-title">{$t("settingsFooter")}</span>
+        <label class="stack">
+          <span class="field-label">{$t("settingsFooterText")}</span>
+          <input
+            type="text"
+            value={$slideSettings.footerText}
+            oninput={(event) => setFooterText(event.currentTarget.value)}
+          />
+          <span class="field-label">{$t("settingsFooterHint")}</span>
+        </label>
         {#each KINDS as kind (kind)}
           <label class="row">
             <span>{$t(kindLabel[kind])}</span>
@@ -329,6 +339,28 @@
     color: var(--text);
     font: inherit;
     font-size: 0.8rem;
+  }
+
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  input[type="text"] {
+    height: 2rem;
+    padding: 0 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.875rem;
+  }
+
+  input[type="text"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
   }
 
   input[type="checkbox"] {

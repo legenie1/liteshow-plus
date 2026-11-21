@@ -75,7 +75,6 @@ describe("markPassage", () => {
     text: "t",
     reference: "r",
     verse: "a b c",
-    footer: "",
   };
 
   it("marks the verse of a stacked passage", () => {

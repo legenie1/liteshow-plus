@@ -91,17 +91,12 @@ export function rowsToLyrics(rows: LyricRow[]): string {
  * pipeline carries it unchanged: the lyrics take the big title slot, the song's
  * name and the section label the small yellow line.
  */
-export function sectionPassage(
-  song: Song,
-  section: SongSection,
-  footer: string,
-): PrayerPoint {
+export function sectionPassage(song: Song, section: SongSection): PrayerPoint {
   return {
     number: "",
     text: section.text,
     reference: section.label ? `${song.title} · ${section.label}` : song.title,
     verse: "",
-    footer,
     kind: "lyrics",
   };
 }
