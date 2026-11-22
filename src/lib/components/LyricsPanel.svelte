@@ -22,7 +22,11 @@
     type Song,
   } from "$lib/songs";
   import { t } from "$lib/i18n";
+  import type { QueueItem } from "$lib/queue";
+  import { songQueue } from "$lib/stores/queue";
+  import LiveScreen from "$lib/components/LiveScreen.svelte";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
+  import QueueList from "$lib/components/QueueList.svelte";
 
   /** One line of the editor; `key` keeps the row's identity when rows move. */
   interface EditorRow {
@@ -77,12 +81,65 @@
   const passages = $derived(
     selected ? sections.map((s) => sectionPassage(selected, s)) : [],
   );
-  const preview = $derived(
-    $lyricsSection !== null ? (passages[$lyricsSection] ?? null) : null,
-  );
+  // The preview follows the mouse over the slides, so one can be seen before it
+  // is clicked (a click projects it); otherwise it shows the chosen slide.
+  let hovered = $state<number | null>(null);
+  const preview = $derived(passages[hovered ?? $lyricsSection ?? -1] ?? null);
   const isLive = (index: number) =>
     $currentPrayer !== null &&
     JSON.stringify($currentPrayer) === JSON.stringify(passages[index]);
+
+  // The queue holds songs in the order of the service. A song that was deleted
+  // since is left out of the list.
+  const queued = $derived(
+    $songQueue.filter((item) => songs.some((song) => song.id === item.id)),
+  );
+  const inQueue = $derived(
+    selected !== null && $songQueue.some((item) => item.id === selected.id),
+  );
+
+  function enqueue() {
+    if (!selected || inQueue) return;
+    songQueue.add(
+      {
+        number: "",
+        text: selected.title,
+        reference: "",
+        verse: sections[0]?.text ?? "",
+        kind: "lyrics",
+      },
+      selected.id,
+    );
+  }
+
+  const songOf = (item: QueueItem) =>
+    songs.find((song) => song.id === item.id) ?? null;
+
+  // A song is live when the slide on screen is one of its own.
+  function queueLive(item: QueueItem): boolean {
+    const song = songOf(item);
+    if (!song || $currentPrayer === null) return false;
+    const live = JSON.stringify($currentPrayer);
+    return parseLyrics(song.lyrics).some(
+      (section) => JSON.stringify(sectionPassage(song, section)) === live,
+    );
+  }
+
+  function queueSelect(id: string) {
+    const song = songs.find((s) => s.id === id);
+    if (song) selectSong(song);
+  }
+
+  // A double click opens the song and puts its first slide on screen.
+  function queueProject(item: QueueItem) {
+    const song = songOf(item);
+    if (!song) return;
+    selectSong(song);
+    const first = parseLyrics(song.lyrics)[0];
+    if (!first) return;
+    lyricsSection.set(0);
+    selectPrayer(sectionPassage(song, first));
+  }
 
   function selectSong(song: Song) {
     lyricsSongId.set(song.id);
@@ -258,6 +315,20 @@
         </p>
       {/each}
     </div>
+
+    <div class="queue-box">
+      <QueueList
+        items={queued}
+        selectedId={$lyricsSongId}
+        isLive={queueLive}
+        onselect={queueSelect}
+        onproject={queueProject}
+        onmove={songQueue.move}
+        onremove={songQueue.remove}
+        onclear={songQueue.clear}
+        empty={$t("lyricsQueueEmpty")}
+      />
+    </div>
   </section>
 
   {#if draft}
@@ -329,6 +400,13 @@
       <div class="head">
         <h2 title={selected.title}>{selected.title}</h2>
         <div class="actions">
+          <button
+            class="plus"
+            disabled={inQueue}
+            aria-label={$t(inQueue ? "lyricsQueued" : "lyricsQueueAdd")}
+            title={$t(inQueue ? "lyricsQueued" : "lyricsQueueAdd")}
+            onclick={enqueue}>+</button
+          >
           <button onclick={() => startEdit(selected)}
             >{$t(selected.builtIn ? "lyricsEditCopy" : "lyricsEdit")}</button
           >
@@ -358,6 +436,8 @@
             class:live={isLive(index)}
             aria-pressed={$lyricsSection === index}
             onclick={() => projectSection(index)}
+            onmouseenter={() => (hovered = index)}
+            onmouseleave={() => (hovered = null)}
           >
             <span class="num">
               {index + 1}
@@ -375,11 +455,19 @@
 
     <section class="preview-pane">
       <span class="label">{$t("prayerPreview")}</span>
-      {#if preview}
-        <PrayerSlide prayer={preview} />
-      {:else}
-        <div class="placeholder"></div>
-      {/if}
+      <div class="stage">
+        {#if preview}
+          <PrayerSlide prayer={preview} />
+        {:else}
+          <div class="placeholder"></div>
+        {/if}
+      </div>
+
+      <!-- What the projector shows right now. -->
+      <span class="label live-label">{$t("live")}</span>
+      <div class="stage">
+        <LiveScreen />
+      </div>
       <p class="message">{$t("lyricsPickHint")}</p>
     </section>
   {:else}
@@ -393,12 +481,15 @@
   /* Three panes on a wide window: songs, slides, preview. Narrower, the preview
      moves above the slides; on a phone-width window everything stacks. */
   .lyrics {
+    /* The preview and the live slide share the column's height: each is as wide as
+       half the window's height allows (16:9). The slides take the spare width. */
+    --stage-w: max(18rem, calc((100vh - 13rem) / 2 * 16 / 9));
     flex: 1;
     min-height: 0;
     display: grid;
     grid-template-columns:
-      minmax(12rem, 16rem) minmax(17rem, 26rem)
-      minmax(0, 1fr);
+      minmax(12rem, 16rem) minmax(17rem, 1fr)
+      minmax(0, var(--stage-w));
     grid-template-areas: "songs slides preview";
     gap: 1.25rem;
     padding: 1rem;
@@ -416,6 +507,31 @@
   .preview-pane {
     grid-area: preview;
     align-self: start;
+  }
+
+  .stage {
+    width: min(100%, var(--stage-w));
+  }
+
+  /* The queue sits under the list of songs, in its own rectangle. */
+  .queue-box {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    height: 14rem;
+    --queue-gap: 0;
+    --queue-min: 5rem;
+  }
+
+  .plus {
+    width: 2rem;
+    padding: 0;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  .live-label {
+    margin-top: 0.25rem;
   }
 
   .editor,

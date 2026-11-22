@@ -7,6 +7,8 @@ export interface Song {
   lyrics: string;
   /** Shipped with the app: can be copied but not changed or deleted. */
   builtIn: boolean;
+  /** Came with its own title and slides (an EasyWorship song), not as loose lines. */
+  structured?: boolean;
 }
 
 /** What a slide is, which decides the colour of its label in the list. */

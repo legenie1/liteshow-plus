@@ -1,7 +1,9 @@
 <script lang="ts">
   import { untrack } from "svelte";
+  import { fade } from "svelte/transition";
   import { convertFileSrc, invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
+  import { fadeMs, slideKey } from "$lib/fade";
   import { board } from "$lib/stores/board";
   import { t } from "$lib/i18n";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
@@ -137,9 +139,16 @@
       ></video>
     {/key}
   {:else if prayer && !blackout}
-    <div class="prayer-frame">
-      <PrayerSlide {prayer} />
-    </div>
+    <!-- A new slide fades in over the old one, which fades out under it. -->
+    {#key slideKey(prayer)}
+      <div
+        class="prayer-frame"
+        in:fade|global={{ duration: fadeMs() }}
+        out:fade|global={{ duration: fadeMs() }}
+      >
+        <PrayerSlide {prayer} />
+      </div>
+    {/key}
   {:else if !blackout && imageUrl}
     <img src={imageUrl} alt="" />
   {/if}
@@ -171,6 +180,12 @@
 
   /* The slide is 16:9: letterboxed on any other screen shape. */
   .prayer-frame {
+    /* Centred on its own, so the slide fading out and the one fading in overlap
+       instead of sitting side by side. */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
     width: min(100vw, calc(100vh * 16 / 9));
   }
 

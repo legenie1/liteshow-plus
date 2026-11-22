@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { librarySongs, titleFromSlug } from "./library";
+import { dedupeLibrary, librarySongs, titleFromSlug } from "./library";
 
 describe("titleFromSlug", () => {
   it("capitalises the words and keeps the small ones low in the middle", () => {
@@ -61,5 +61,82 @@ describe("librarySongs", () => {
     expect(librarySongs([["a"]])).toEqual([]);
     expect(librarySongs("x")).toEqual([]);
     expect(librarySongs(undefined)).toEqual([]);
+  });
+});
+
+describe("librarySongs with titled songs", () => {
+  it("keeps the title and the slides as written", () => {
+    const [song] = librarySongs({
+      "amazing-grace": {
+        title: "Amazing  Grace",
+        lyrics: "[Verse 1]\n  Amazing grace \nhow sweet\n\n\n\n[Chorus]\nla la",
+      },
+    });
+    expect(song.title).toBe("Amazing Grace");
+    expect(song.lyrics).toBe(
+      "[Verse 1]\nAmazing grace\nhow sweet\n\n[Chorus]\nla la",
+    );
+    expect(song.id).toBe("library-song-amazing-grace");
+    expect(song.structured).toBe(true);
+    expect(song.builtIn).toBe(true);
+  });
+
+  it("takes both kinds of entry from one file", () => {
+    const songs = librarySongs({
+      plain: ["a", "b"],
+      rich: { title: "Rich", lyrics: "x" },
+    });
+    expect(songs.map((s) => s.structured ?? false)).toEqual([false, true]);
+  });
+
+  it("skips a titled song with no title or no lyrics", () => {
+    expect(
+      librarySongs({
+        a: { title: "", lyrics: "x" },
+        b: { title: "B", lyrics: "  " },
+        c: { title: "C" },
+      }),
+    ).toEqual([]);
+  });
+});
+
+describe("dedupeLibrary", () => {
+  const plain = (title: string) => ({
+    id: `p-${title}`,
+    title,
+    lyrics: "l",
+    builtIn: true,
+  });
+  const rich = (title: string, id = `r-${title}`) => ({
+    id,
+    title,
+    lyrics: "l",
+    builtIn: true,
+    structured: true,
+  });
+
+  it("drops a loose song when a titled one has the same title", () => {
+    const songs = dedupeLibrary([
+      plain("Amazing Grace"),
+      plain("Only Plain"),
+      rich("amazing grace!"),
+    ]);
+    expect(songs.map((s) => s.id)).toEqual([
+      "p-Only Plain",
+      "r-amazing grace!",
+    ]);
+  });
+
+  it("ignores accents and punctuation when comparing titles", () => {
+    expect(
+      dedupeLibrary([plain("Cest la vie"), rich("C'est la vie")]).map(
+        (s) => s.id,
+      ),
+    ).toEqual(["r-C'est la vie"]);
+  });
+
+  it("keeps several titled songs that share a title", () => {
+    const songs = dedupeLibrary([rich("Grace", "r1"), rich("Grace", "r2")]);
+    expect(songs.map((s) => s.id)).toEqual(["r1", "r2"]);
   });
 });

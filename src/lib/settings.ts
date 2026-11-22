@@ -3,7 +3,7 @@ import type { SlideKind } from "$lib/types";
 
 export const KINDS: SlideKind[] = ["prayer", "bible", "dictionary", "lyrics"];
 
-export const BACKGROUNDS = ["green", "chalkboard", "black"] as const;
+export const BACKGROUNDS = ["green", "chalkboard", "lyrics", "black"] as const;
 export type BackgroundId = (typeof BACKGROUNDS)[number];
 
 export const TEXT_SIZES = ["small", "normal", "large", "huge"] as const;
@@ -17,7 +17,15 @@ export const TEXT_SCALE: Record<TextSize, number> = {
   huge: 1.4,
 };
 
+/**
+ * Bumped when a default changes for people who never chose it. Settings are saved
+ * in full from the first launch, so an old default can't be told from a choice:
+ * a stored version below this one gets the new default back.
+ */
+export const SETTINGS_VERSION = 2;
+
 export interface SlideSettings {
+  version: number;
   backgrounds: Record<SlideKind, BackgroundId>;
   /** Whether the footer line is drawn under each kind of slide. */
   footers: Record<SlideKind, boolean>;
@@ -27,11 +35,12 @@ export interface SlideSettings {
 }
 
 export const DEFAULT_SETTINGS: SlideSettings = {
+  version: SETTINGS_VERSION,
   backgrounds: {
     prayer: "green",
     bible: "chalkboard",
     dictionary: "green",
-    lyrics: "green",
+    lyrics: "lyrics",
   },
   footers: { prayer: true, bible: false, dictionary: true, lyrics: true },
   footerText: DEFAULT_FOOTER,
@@ -54,6 +63,7 @@ export function parseSettings(raw: string | null): SlideSettings {
   let data: Record<string, Record<string, unknown>> & {
     bibleTextSize?: unknown;
     footerText?: unknown;
+    version?: unknown;
   } = {};
   try {
     const parsed: unknown = raw ? JSON.parse(raw) : {};
@@ -70,6 +80,10 @@ export function parseSettings(raw: string | null): SlideSettings {
     );
     const footer = data.footers?.[kind];
     if (typeof footer === "boolean") settings.footers[kind] = footer;
+  }
+  // Version 1 saved the old lyrics default (green) as if it were a choice.
+  if (data.version !== SETTINGS_VERSION) {
+    settings.backgrounds.lyrics = DEFAULT_SETTINGS.backgrounds.lyrics;
   }
   // An empty text is a valid choice.
   if (typeof data.footerText === "string") {

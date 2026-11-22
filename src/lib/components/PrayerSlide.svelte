@@ -112,9 +112,10 @@
       </div>
     </div>
   {:else}
-    <div bind:this={content} class="content">
+    <div bind:this={content} class="content" class:lyrics={kind === "lyrics"}>
       <p class="title">{prayer.text.trim()}</p>
-      {#if prayer.reference.trim() || prayer.verse.trim()}
+      <!-- A song's name is not repeated under its lyrics. -->
+      {#if kind !== "lyrics" && (prayer.reference.trim() || prayer.verse.trim())}
         <div class="scripture">
           {#if prayer.reference.trim()}
             <p class="reference">{prayer.reference.trim()}</p>
@@ -270,6 +271,24 @@
     font-weight: 800;
     line-height: 1;
     letter-spacing: -0.01em;
+  }
+
+  /* Lyrics: centred, with room above and the icons of the background below. The
+     auto margins centre the text yet let a long one grow downwards, so the fit
+     loop can measure it. */
+  .content.lyrics {
+    top: 10cqw;
+    bottom: 9cqw;
+    left: 8cqw;
+    right: 8cqw;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .lyrics .title {
+    margin: auto 0;
+    line-height: 1.14;
   }
 
   .scripture {

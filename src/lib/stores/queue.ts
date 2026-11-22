@@ -35,8 +35,8 @@ function createQueue(key: string) {
 
   return {
     subscribe,
-    add: (passage: PrayerPoint) =>
-      update((queue) => addItem(queue, passage, newId())),
+    add: (passage: PrayerPoint, id: string = newId()) =>
+      update((queue) => addItem(queue, passage, id)),
     /** Swaps the slide of an item, e.g. after highlighting words in it. */
     replace: (id: string, passage: PrayerPoint) =>
       update((queue) => updateItem(queue, id, passage)),
@@ -52,3 +52,9 @@ export const bibleQueue = createQueue("liteshow.bibleQueue");
 
 /** The prayer points lined up for the service (Prayer tab). */
 export const prayerQueue = createQueue("liteshow.prayerQueue");
+
+/**
+ * The songs lined up for the service (Lyrics tab). Each entry is keyed by its song's
+ * id, and its slide only carries the title and the first slide, for the list.
+ */
+export const songQueue = createQueue("liteshow.songQueue");

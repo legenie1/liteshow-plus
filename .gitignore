@@ -15,3 +15,4 @@ vite.config.ts.timestamp-*
 
 # EasyWorship Bibles to convert (see scripts/ewb-to-json.py); licensed, keep local
 *.ewb
+__pycache__/

@@ -13,6 +13,8 @@
     onmove: (id: string, delta: -1 | 1) => void;
     onremove: (id: string) => void;
     onclear: () => void;
+    /** Said when the list is empty; the verses' one by default. */
+    empty?: string;
   }
 
   const {
@@ -24,6 +26,7 @@
     onmove,
     onremove,
     onclear,
+    empty,
   }: Props = $props();
 </script>
 
@@ -35,7 +38,7 @@
   </div>
 
   {#if items.length === 0}
-    <p class="empty">{$t("queueEmpty")}</p>
+    <p class="empty">{empty ?? $t("queueEmpty")}</p>
   {:else}
     <!-- The list scrolls inside the room it is given, with a thin bar that only
          shows its thumb. -->

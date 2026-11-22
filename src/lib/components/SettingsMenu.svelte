@@ -55,8 +55,13 @@
 
   const backgroundLabel: Record<
     BackgroundId,
-    "bgGreen" | "bgChalkboard" | "bgBlack"
-  > = { green: "bgGreen", chalkboard: "bgChalkboard", black: "bgBlack" };
+    "bgGreen" | "bgChalkboard" | "bgLyrics" | "bgBlack"
+  > = {
+    green: "bgGreen",
+    chalkboard: "bgChalkboard",
+    lyrics: "bgLyrics",
+    black: "bgBlack",
+  };
 
   const sizeLabel: Record<
     TextSize,

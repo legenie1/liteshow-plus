@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import { librarySongs } from "$lib/library";
+import { dedupeLibrary, librarySongs } from "$lib/library";
 import type { Song } from "$lib/songs";
 
 // Every JSON file dropped in src/assets/songs/ is a library: `{ slug: [lines] }`.
@@ -32,7 +32,7 @@ export function loadLibrary(): Promise<void> {
         if (result.status === "fulfilled") songs.push(...result.value);
         else failed = true;
       }
-      librarySongList.set(songs);
+      librarySongList.set(dedupeLibrary(songs));
       libraryFailed.set(failed);
     },
   );

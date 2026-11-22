@@ -37,6 +37,13 @@ describe("addItem", () => {
   });
 });
 
+describe("addItem with a chosen id", () => {
+  it("queues a song once, even if its first slide changed since", () => {
+    const first = addItem([], point("Song", "v1"), "song-1");
+    expect(addItem(first, point("Song", "edited"), "song-1")).toBe(first);
+  });
+});
+
 describe("removeItem and moveItem", () => {
   it("removes one item", () => {
     expect(removeItem(items("a", "b"), "a").map((i) => i.id)).toEqual(["b"]);

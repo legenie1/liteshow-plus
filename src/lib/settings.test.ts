@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS, parseSettings } from "./settings";
+import { DEFAULT_SETTINGS, parseSettings, SETTINGS_VERSION } from "./settings";
 import { DEFAULT_FOOTER } from "./prayer";
 
 describe("parseSettings", () => {
@@ -36,5 +36,22 @@ describe("parseSettings", () => {
     expect(parseSettings(JSON.stringify({ footerText: 3 })).footerText).toBe(
       DEFAULT_FOOTER,
     );
+  });
+
+  it("gives the new lyrics background to settings saved before it existed", () => {
+    const old = JSON.stringify({
+      backgrounds: { lyrics: "green", bible: "black" },
+    });
+    const settings = parseSettings(old);
+    expect(settings.backgrounds.lyrics).toBe("lyrics");
+    expect(settings.backgrounds.bible).toBe("black");
+  });
+
+  it("keeps a lyrics background chosen since", () => {
+    const saved = JSON.stringify({
+      version: SETTINGS_VERSION,
+      backgrounds: { lyrics: "green" },
+    });
+    expect(parseSettings(saved).backgrounds.lyrics).toBe("green");
   });
 });

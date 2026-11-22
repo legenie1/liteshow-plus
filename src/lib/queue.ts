@@ -11,14 +11,21 @@ export interface QueueItem {
   passage: PrayerPoint;
 }
 
-/** Appends a passage, unless the very same slide is already in the queue. */
+/**
+ * Appends a passage, unless the very same slide, or the same id (a song is queued
+ * under its own id), is already in the queue.
+ */
 export function addItem(
   queue: QueueItem[],
   passage: PrayerPoint,
   id: string,
 ): QueueItem[] {
   const same = JSON.stringify(passage);
-  if (queue.some((item) => JSON.stringify(item.passage) === same)) {
+  if (
+    queue.some(
+      (item) => item.id === id || JSON.stringify(item.passage) === same,
+    )
+  ) {
     return queue;
   }
   return [...queue, { id, passage }];

@@ -6,3 +6,4 @@ src-tauri/gen/
 pnpm-lock.yaml
 PROJECT.md
 src/assets/bible/
+src/assets/songs/

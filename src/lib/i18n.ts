@@ -74,6 +74,7 @@ const en = {
   settingsFrenchTranslation: "French translation",
   bgGreen: "Green rays",
   bgChalkboard: "Chalkboard",
+  bgLyrics: "Red glow",
   bgBlack: "Black",
   sizeSmall: "Small",
   sizeNormal: "Normal",
@@ -111,6 +112,9 @@ const en = {
   lyricsEmpty: 'No song yet. Use "Add a song" and paste the lyrics.',
   lyricsNoMatch: "No song matches.",
   lyricsPick: "Pick a song on the left, then click a slide to project it.",
+  lyricsQueueAdd: "Add the song to the queue",
+  lyricsQueued: "Already in the queue",
+  lyricsQueueEmpty: "Nothing queued. Pick a song and press + to line it up.",
   lyricsPickHint:
     "A click projects the slide. Arrow keys move to the next or previous one.",
   lyricsEdit: "Edit",
@@ -219,6 +223,7 @@ const fr: Record<MessageKey, string> = {
   settingsFrenchTranslation: "Traduction française",
   bgGreen: "Rayons verts",
   bgChalkboard: "Tableau noir",
+  bgLyrics: "Lueur rouge",
   bgBlack: "Noir",
   sizeSmall: "Petit",
   sizeNormal: "Normal",
@@ -258,6 +263,10 @@ const fr: Record<MessageKey, string> = {
   lyricsNoMatch: "Aucun chant ne correspond.",
   lyricsPick:
     "Choisis un chant à gauche, puis clique une diapo pour la projeter.",
+  lyricsQueueAdd: "Mettre le chant en file d'attente",
+  lyricsQueued: "Déjà dans la file d'attente",
+  lyricsQueueEmpty:
+    "Rien en attente. Choisis un chant et appuie sur + pour le mettre en file.",
   lyricsPickHint:
     "Un clic projette la diapo. Les flèches passent à la suivante ou à la précédente.",
   lyricsEdit: "Modifier",
