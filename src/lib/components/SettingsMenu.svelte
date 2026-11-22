@@ -20,7 +20,13 @@
     type TextSize,
   } from "$lib/settings";
   import type { BibleLanguage, BibleLayout } from "$lib/bible";
-  import { t } from "$lib/i18n";
+  import {
+    language,
+    languages as interfaceLanguages,
+    setLanguage,
+    t,
+    type Language,
+  } from "$lib/i18n";
 
   // Global settings: one popup for the whole app, one section per topic.
   let open = $state(false);
@@ -33,6 +39,12 @@
   function onWindowKeydown(event: KeyboardEvent) {
     if (open && event.key === "Escape") open = false;
   }
+
+  // A language is named in itself, whatever the interface is written in.
+  const languageName: Record<Language, string> = {
+    en: "English",
+    fr: "Français",
+  };
 
   const kindLabel = {
     prayer: "tabPrayer",
@@ -98,6 +110,21 @@
   </button>
   {#if open}
     <div class="popup" role="dialog" aria-label={$t("settings")}>
+      <section>
+        <label class="row">
+          <span class="section-title">{$t("language")}</span>
+          <select
+            value={$language}
+            onchange={(event) =>
+              setLanguage(event.currentTarget.value as Language)}
+          >
+            {#each interfaceLanguages as code (code)}
+              <option value={code}>{languageName[code]}</option>
+            {/each}
+          </select>
+        </label>
+      </section>
+
       <section>
         <span class="section-title">{$t("settingsBackgrounds")}</span>
         {#each KINDS as kind (kind)}
@@ -253,7 +280,12 @@
     gap: 1rem;
     width: 20rem;
     max-height: calc(100vh - 5rem);
+    overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    /* The same thin, discreet bar as the lists of the Bible tab. */
+    scrollbar-width: thin;
+    scrollbar-color: #3d3d3d transparent;
     padding: 0.75rem;
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -350,7 +382,9 @@
     background: rgba(255, 255, 255, 0.3);
   }
 
+  /* Sections keep their height and the popup scrolls, rather than squeezing them. */
   section {
+    flex: none;
     display: flex;
     flex-direction: column;
     gap: 0.6rem;

@@ -25,6 +25,7 @@
   import type { PrayerPoint } from "$lib/types";
   import type { QueueItem } from "$lib/queue";
   import { prayerQueue } from "$lib/stores/queue";
+  import LiveScreen from "$lib/components/LiveScreen.svelte";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
   import VersionPicker from "$lib/components/VersionPicker.svelte";
   import QueueList from "$lib/components/QueueList.svelte";
@@ -141,7 +142,11 @@
     selectedId = null;
   });
 
-  const shown = $derived(selected ? selected.passage : $prayerDraft);
+  // The text boxes edit the draft in place, so the store holds the same object after
+  // each keystroke. A derived value that returned that very object would look
+  // unchanged to Svelte, and the preview (and the Project button) would not follow
+  // the typing: a copy makes every keystroke a change.
+  const shown = $derived(selected ? selected.passage : { ...$prayerDraft });
   const projectable = $derived(canProject(shown));
   const queueable = $derived(canProject($prayerDraft));
   const onScreen = $derived(
@@ -266,19 +271,6 @@
     </div>
 
     <div class="actions">
-      <button
-        class="primary"
-        class:live={onScreen}
-        disabled={!projectable}
-        onclick={project}>{$t("prayerProject")}</button
-      >
-      <button
-        disabled={!queueable}
-        class="plus"
-        aria-label={$t("prayerQueueAddHint")}
-        title={$t("prayerQueueAddHint")}
-        onclick={enqueue}>+</button
-      >
       <button onclick={next}>{$t("prayerNext")}</button>
       <button onclick={clear}>{$t("prayerClear")}</button>
       <span class="hint">{$t("prayerHint")}</span>
@@ -310,9 +302,38 @@
     {/if}
   </div>
 
-  <div class="preview">
-    <span class="preview-label">{$t("prayerPreview")}</span>
-    <PrayerSlide prayer={shown} />
+  <section class="preview">
+    <div class="preview-head">
+      <span class="preview-label">{$t("prayerPreview")}</span>
+      <span class="spacer"></span>
+      <button
+        disabled={!queueable}
+        class="plus"
+        aria-label={$t("prayerQueueAddHint")}
+        title={$t("prayerQueueAddHint")}
+        onclick={enqueue}>+</button
+      >
+      <button
+        class="primary"
+        class:live={onScreen}
+        disabled={!projectable}
+        onclick={project}>{$t("prayerProject")}</button
+      >
+    </div>
+    <div class="stage">
+      <PrayerSlide prayer={shown} />
+    </div>
+
+    <!-- What the projector shows right now. -->
+    <div class="live-head">
+      <span class="preview-label">{$t("live")}</span>
+    </div>
+    <div class="stage">
+      <LiveScreen />
+    </div>
+  </section>
+
+  <section class="queue">
     <QueueList
       items={$prayerQueue}
       {selectedId}
@@ -323,25 +344,64 @@
       onremove={prayerQueue.remove}
       onclear={prayerQueue.clear}
     />
-  </div>
+  </section>
 </div>
 
 <style>
   .editor {
+    /* Two slides, the preview and the live one, share the column's height: each is
+       as wide as half the window's height allows (16:9), and the queue takes the
+       rest of the width. */
+    --stage-w: max(18rem, calc((100vh - 14rem) / 2 * 16 / 9));
     flex: 1;
+    min-height: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    align-content: start;
+    grid-template-columns:
+      minmax(18rem, 30rem) minmax(0, var(--stage-w))
+      minmax(15rem, 1fr);
+    grid-template-areas: "form preview queue";
     gap: 1.25rem;
     padding: 1rem;
-    overflow-y: auto;
+    overflow: hidden;
+  }
+
+  /* Without the room for three columns the queue goes under the slides. */
+  @media (max-width: 1300px) {
+    .editor {
+      grid-template-columns: minmax(18rem, 30rem) minmax(0, 1fr);
+      grid-template-rows: auto minmax(12rem, 1fr);
+      grid-template-areas:
+        "form preview"
+        "form queue";
+      overflow-y: auto;
+    }
+  }
+
+  /* A narrow window stacks the sections and scrolls instead of squeezing. */
+  @media (max-width: 760px) {
+    .editor {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: none;
+      grid-template-areas:
+        "form"
+        "preview"
+        "queue";
+      grid-auto-rows: min-content;
+    }
+
+    .queue {
+      min-height: 14rem;
+    }
   }
 
   .form {
+    grid-area: form;
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
     min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .field {
@@ -489,11 +549,53 @@
   }
 
   .preview {
+    grid-area: preview;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
     min-width: 0;
-    /* The page scrolls, so the queue gets a fixed room of its own. */
-    --queue-min: 12rem;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .queue {
+    grid-area: queue;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    /* Level with the top of the preview, no gap above the list. */
+    --queue-gap: 0;
+  }
+
+  .stage,
+  .preview-head,
+  .live-head {
+    flex: none;
+    width: min(100%, var(--stage-w));
+    margin-inline: auto;
+  }
+
+  .preview-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .preview-head button {
+    min-width: 6.5rem;
+  }
+
+  .preview-head .plus {
+    min-width: 0;
+  }
+
+  .spacer {
+    flex: 1;
+  }
+
+  .live-head {
+    margin-top: 0.5rem;
   }
 </style>

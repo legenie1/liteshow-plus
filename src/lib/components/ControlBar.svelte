@@ -5,8 +5,6 @@
   import { folderPath, images } from "$lib/stores/images";
   import { activeTab, videoFolderPath, videos } from "$lib/stores/videos";
   import {
-    monitors,
-    selectedMonitorId,
     loadMonitors,
     selectMonitor,
     getRememberedMonitorId,
@@ -18,15 +16,13 @@
     toggleBlackout,
   } from "$lib/stores/projection";
   import { loadTheme, showTheme, themeImage } from "$lib/stores/theme";
-  import {
-    language,
-    languages,
-    setLanguage,
-    t,
-    type Language,
-  } from "$lib/i18n";
+  import { boardKindForTab } from "$lib/board";
+  import { setBoardKind } from "$lib/stores/board";
+  import { t } from "$lib/i18n";
+  import DisplayMenu from "$lib/components/DisplayMenu.svelte";
+  import OnAirLight from "$lib/components/OnAirLight.svelte";
   import SettingsMenu from "$lib/components/SettingsMenu.svelte";
-  import type { ImageFile, MonitorInfo, VideoFile } from "$lib/types";
+  import type { ImageFile, VideoFile } from "$lib/types";
 
   let error = $state<string | null>(null);
 
@@ -53,6 +49,11 @@
     $themeImage !== null && $currentImage === $themeImage && !$isBlackout,
   );
 
+  // The blackout shows the background of the section the operator is on.
+  $effect(() => {
+    setBoardKind(boardKindForTab($activeTab));
+  });
+
   onMount(async () => {
     try {
       const found = await loadMonitors();
@@ -70,12 +71,6 @@
 
   function folderName(path: string): string {
     return path.split(/[\\/]/).filter(Boolean).pop() ?? path;
-  }
-
-  function monitorLabel(monitor: MonitorInfo): string {
-    const name = monitor.name.replace(/^\\\\\.\\DISPLAY/, `${$t("display")} `);
-    const primary = monitor.isPrimary ? ` (${$t("primary")})` : "";
-    return `${name}${primary} · ${monitor.width}×${monitor.height}`;
   }
 
   async function chooseFolder() {
@@ -101,25 +96,6 @@
         images.set(found);
         loadTheme(selected, found);
       }
-    } catch (err) {
-      error = String(err);
-    }
-  }
-
-  function onLanguageChange(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    setLanguage(select.value as Language);
-    select.blur();
-  }
-
-  async function onMonitorChange(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    const id = select.value;
-    // A focused select would turn the next arrow key into a screen change.
-    select.blur();
-    if (!id) return;
-    try {
-      await selectMonitor(id);
     } catch (err) {
       error = String(err);
     }
@@ -182,26 +158,9 @@
 
   <span class="spacer"></span>
 
-  <select
-    aria-label={$t("language")}
-    value={$language}
-    onchange={onLanguageChange}
-  >
-    {#each languages as code (code)}
-      <option value={code}>{code.toUpperCase()}</option>
-    {/each}
-  </select>
+  <OnAirLight />
 
-  <select
-    aria-label={$t("projectionDisplay")}
-    value={$selectedMonitorId ?? ""}
-    onchange={onMonitorChange}
-  >
-    <option value="" disabled>{$t("projectionDisplayPlaceholder")}</option>
-    {#each $monitors as monitor (monitor.id)}
-      <option value={monitor.id}>{monitorLabel(monitor)}</option>
-    {/each}
-  </select>
+  <DisplayMenu onerror={(message) => (error = message)} />
 
   <button
     class="theme-button"
@@ -236,8 +195,7 @@
     font-size: 0.875rem;
   }
 
-  button,
-  select {
+  button {
     height: 2rem;
     padding: 0 0.75rem;
     border: 1px solid var(--line);
@@ -248,8 +206,7 @@
     cursor: pointer;
   }
 
-  button:hover,
-  select:hover {
+  button:hover {
     border-color: var(--muted);
   }
 

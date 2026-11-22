@@ -1,12 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
-  import {
-    currentImage,
-    currentPrayer,
-    currentVideo,
-    isBlackout,
-    selectPrayer,
-  } from "$lib/stores/projection";
+  import { currentPrayer, selectPrayer } from "$lib/stores/projection";
   import {
     activeTranslations,
     bibleLayout,
@@ -40,6 +34,7 @@
   import { bibleQueue } from "$lib/stores/queue";
   import QueueList from "$lib/components/QueueList.svelte";
   import { language, t } from "$lib/i18n";
+  import LiveScreen from "$lib/components/LiveScreen.svelte";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
   import VersionPicker from "$lib/components/VersionPicker.svelte";
 
@@ -512,20 +507,10 @@
 
     <!-- What the projector shows right now. -->
     <div class="live-head">
-      <span class="label">{$t("bibleLive")}</span>
+      <span class="label">{$t("live")}</span>
     </div>
     <div class="stage">
-      {#if $isBlackout}
-        <div class="live-empty">{$t("blackout")}</div>
-      {:else if $currentPrayer}
-        <PrayerSlide prayer={$currentPrayer} />
-      {:else}
-        <div class="live-empty">
-          {$currentImage || $currentVideo
-            ? $t("bibleLiveOther")
-            : $t("bibleLiveNone")}
-        </div>
-      {/if}
+      <LiveScreen />
     </div>
   </section>
 
@@ -904,18 +889,6 @@
 
   .live-head {
     margin-top: 0.5rem;
-  }
-
-  /* Nothing to draw on the projector: a black rectangle that says why. */
-  .live-empty {
-    display: grid;
-    place-items: center;
-    aspect-ratio: 16 / 9;
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    background: #000;
-    color: var(--muted);
-    font-size: 0.8rem;
   }
 
   .placeholder {

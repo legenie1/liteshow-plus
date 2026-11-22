@@ -7,14 +7,18 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 import {
+  clearOutput,
   currentImage,
   currentPrayer,
   currentVideo,
+  heldOutput,
   isBlackout,
+  restoreOutput,
   selectImage,
   selectPrayer,
   selectVideo,
   toggleBlackout,
+  toggleOutput,
   toggleVideoLoop,
   toggleVideoMute,
   toggleVideoPlayback,
@@ -28,6 +32,7 @@ beforeEach(() => {
   currentVideo.set(null);
   currentPrayer.set(null);
   isBlackout.set(false);
+  heldOutput.set(null);
   videoLoop.set(false);
   videoMuted.set(false);
 });
@@ -44,6 +49,86 @@ describe("selectImage", () => {
     });
     expect(get(currentImage)).toBe("/a.jpg");
     expect(get(isBlackout)).toBe(false);
+  });
+});
+
+describe("clearOutput", () => {
+  it("empties the screen: no slide, no image, no video, no blackout", async () => {
+    invokeMock.mockResolvedValue(undefined);
+    currentPrayer.set({ number: "", text: "t", reference: "", verse: "" });
+    currentVideo.set("v.mp4");
+    isBlackout.set(true);
+
+    await clearOutput();
+
+    expect(invokeMock).toHaveBeenCalledWith("set_current_image", {
+      path: null,
+    });
+    expect(get(currentPrayer)).toBeNull();
+    expect(get(currentVideo)).toBeNull();
+    expect(get(currentImage)).toBeNull();
+    expect(get(isBlackout)).toBe(false);
+  });
+});
+
+describe("restoreOutput and toggleOutput", () => {
+  const slide = { number: "", text: "t", reference: "", verse: "" };
+
+  it("puts back what clearOutput took off the screen", async () => {
+    invokeMock.mockResolvedValue(undefined);
+    currentPrayer.set(slide);
+
+    await clearOutput();
+    expect(get(heldOutput)?.prayer).toEqual(slide);
+
+    await restoreOutput();
+    expect(invokeMock).toHaveBeenLastCalledWith("set_current_prayer", {
+      prayer: slide,
+    });
+    expect(get(currentPrayer)).toEqual(slide);
+    expect(get(heldOutput)).toBeNull();
+  });
+
+  it("forgets the held output as soon as something new is selected", async () => {
+    invokeMock.mockResolvedValue(undefined);
+    currentImage.set("/a.jpg");
+    await clearOutput();
+
+    await selectPrayer(slide);
+
+    expect(get(heldOutput)).toBeNull();
+  });
+
+  it("restores an image or a video too", async () => {
+    invokeMock.mockResolvedValue(undefined);
+    currentImage.set("/a.jpg");
+    await clearOutput();
+    await restoreOutput();
+    expect(get(currentImage)).toBe("/a.jpg");
+
+    currentImage.set(null);
+    currentVideo.set("v.mp4");
+    await clearOutput();
+    await restoreOutput();
+    expect(invokeMock).toHaveBeenLastCalledWith("set_current_video", {
+      name: "v.mp4",
+    });
+  });
+
+  it("switches off then on again", async () => {
+    invokeMock.mockResolvedValue(undefined);
+    currentPrayer.set(slide);
+
+    await toggleOutput();
+    expect(get(currentPrayer)).toBeNull();
+
+    await toggleOutput();
+    expect(get(currentPrayer)).toEqual(slide);
+  });
+
+  it("does nothing when there is nothing on screen and nothing held", async () => {
+    await toggleOutput();
+    expect(invokeMock).not.toHaveBeenCalled();
   });
 });
 

@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { get, writable } from "svelte/store";
 import { invoke } from "@tauri-apps/api/core";
 import type { PrayerPoint } from "$lib/types";
 
@@ -9,6 +9,14 @@ export const currentPrayer = writable<PrayerPoint | null>(null);
 export const isBlackout = writable<boolean>(false);
 export const videoLoop = writable<boolean>(false);
 export const videoMuted = writable<boolean>(false);
+/** What was on the screen, remembered while the output is switched off. */
+export interface Output {
+  image: string | null;
+  video: string | null;
+  prayer: PrayerPoint | null;
+}
+export const heldOutput = writable<Output | null>(null);
+
 // The slide the theme interrupted: navigation carries on from here, not from the
 // theme's own position in the list.
 export const resumeImage = writable<string | null>(null);
@@ -21,7 +29,46 @@ export async function selectImage(path: string | null): Promise<void> {
   currentPrayer.set(null);
   isBlackout.set(false);
   resumeImage.set(null);
+  heldOutput.set(null);
   await invoke("set_current_image", { path });
+}
+
+const isEmpty = (o: Output) => !o.image && !o.video && !o.prayer;
+
+/**
+ * Takes everything off the screen: no image, video or slide, and the blackout
+ * lifted, so the output is simply empty. What was there is kept, so
+ * `restoreOutput` can put it back. The image command already empties everything
+ * when it is given nothing.
+ */
+export async function clearOutput(): Promise<void> {
+  const output: Output = {
+    image: get(currentImage),
+    video: get(currentVideo),
+    prayer: get(currentPrayer),
+  };
+  if (isEmpty(output)) return;
+  await selectImage(null);
+  heldOutput.set(output); // after selectImage, which drops what was held
+}
+
+/** Shows again what `clearOutput` took off the screen. */
+export async function restoreOutput(): Promise<void> {
+  const output = get(heldOutput);
+  if (!output) return;
+  if (output.prayer) await selectPrayer(output.prayer);
+  else if (output.video) await selectVideo(output.video);
+  else await selectImage(output.image);
+}
+
+/** The on-air switch: off when something is showing, on again when it isn't. */
+export function toggleOutput(): Promise<void> {
+  const showing = !isEmpty({
+    image: get(currentImage),
+    video: get(currentVideo),
+    prayer: get(currentPrayer),
+  });
+  return showing ? clearOutput() : restoreOutput();
 }
 
 export async function selectVideo(name: string | null): Promise<void> {
@@ -30,6 +77,7 @@ export async function selectVideo(name: string | null): Promise<void> {
   currentPrayer.set(null);
   isBlackout.set(false);
   resumeImage.set(null);
+  heldOutput.set(null);
   await invoke("set_current_video", { name });
 }
 
@@ -39,6 +87,7 @@ export async function selectPrayer(prayer: PrayerPoint | null): Promise<void> {
   currentVideo.set(null);
   isBlackout.set(false);
   resumeImage.set(null);
+  heldOutput.set(null);
   await invoke("set_current_prayer", { prayer });
 }
 

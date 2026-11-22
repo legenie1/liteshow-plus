@@ -2,6 +2,7 @@
   import { untrack } from "svelte";
   import { convertFileSrc, invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
+  import { board } from "$lib/stores/board";
   import { t } from "$lib/i18n";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
   import type { PrayerPoint, ProjectionState } from "$lib/types";
@@ -64,7 +65,7 @@
     };
   });
 
-  // The sound would keep going behind a black screen.
+  // The sound would keep going behind the blackout.
   $effect(() => {
     if (blackout) videoEl?.pause();
   });
@@ -110,7 +111,14 @@
   });
 </script>
 
-<main class="projection">
+<!-- The blackout shows the background of the section the operator is on, with
+     nothing written on it. -->
+<main
+  class="projection"
+  class:blackout
+  style:--board={$board.url ? `url(${$board.url})` : "none"}
+  style:--veil={$board.veil}
+>
   {#if error}
     <p class="error">{error}</p>
   {:else if videoName && videoError}
@@ -146,6 +154,12 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
+  }
+
+  .projection.blackout {
+    background:
+      linear-gradient(var(--veil), var(--veil)),
+      #000 var(--board) center / cover no-repeat;
   }
 
   .projection img,
