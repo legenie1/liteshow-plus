@@ -4,6 +4,7 @@
     selectedMonitorId,
     selectMonitor,
   } from "$lib/stores/monitors";
+  import { displayNumber, monitorMap } from "$lib/monitor-map";
   import { t } from "$lib/i18n";
   import type { MonitorInfo } from "$lib/types";
 
@@ -22,6 +23,11 @@
   const current = $derived(
     $monitors.find((monitor) => monitor.id === $selectedMonitorId) ?? null,
   );
+
+  // The screens as they sit on the desk, so the right one can be told at a glance;
+  // hovering a screen lights up its row and the other way round.
+  const map = $derived(monitorMap($monitors));
+  let hovered = $state<string | null>(null);
 
   function label(monitor: MonitorInfo): string {
     const name = monitor.name.replace(/^\\\\\.\\DISPLAY/, `${$t("display")} `);
@@ -84,17 +90,51 @@
 
   {#if open}
     <div class="menu" role="menu" aria-label={$t("projectionDisplay")}>
-      {#each $monitors as monitor (monitor.id)}
+      {#if map}
+        <!-- A mouse shortcut: the list below does the same for the keyboard. -->
+        <div class="map-wrap" aria-hidden="true">
+          <div
+            class="map"
+            style:aspect-ratio={map.aspect}
+            style:width={`min(100%, ${(map.aspect * 6).toFixed(2)}rem)`}
+          >
+            {#each map.rects as rect (rect.id)}
+              <button
+                class="screen"
+                class:chosen={rect.id === $selectedMonitorId}
+                class:hover={rect.id === hovered}
+                tabindex="-1"
+                style:left={`${rect.left}%`}
+                style:top={`${rect.top}%`}
+                style:width={`${rect.width}%`}
+                style:height={`${rect.height}%`}
+                onclick={() => choose(rect.id)}
+                onmouseenter={() => (hovered = rect.id)}
+                onmouseleave={() => (hovered = null)}
+              >
+                <span class="face">{rect.number}</span>
+              </button>
+            {/each}
+          </div>
+        </div>
+      {/if}
+      {#each $monitors as monitor, index (monitor.id)}
         {@const chosen = monitor.id === $selectedMonitorId}
         <button
           class="item"
           class:chosen
+          class:hover={monitor.id === hovered}
           role="menuitemradio"
           aria-checked={chosen}
           onclick={() => choose(monitor.id)}
+          onmouseenter={() => (hovered = monitor.id)}
+          onmouseleave={() => (hovered = null)}
         >
           <span class="mark" aria-hidden="true">{chosen ? "✓" : ""}</span>
           {label(monitor)}
+          <span class="number" aria-hidden="true"
+            >{displayNumber(monitor.name, index)}</span
+          >
         </button>
       {:else}
         <span class="none">{$t("projectionDisplayPlaceholder")}</span>
@@ -143,7 +183,9 @@
   .menu {
     position: absolute;
     top: calc(100% + 0.4rem);
-    right: 0;
+    /* Centred under the icon. */
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 10;
     display: flex;
     flex-direction: column;
@@ -177,12 +219,63 @@
     cursor: pointer;
   }
 
-  .item:hover {
+  .item:hover,
+  .item.hover {
     background: var(--surface);
   }
 
   .item.chosen {
     color: var(--accent);
+  }
+
+  .number {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+
+  .map-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 0.4rem 0.4rem 0.5rem;
+  }
+
+  .map {
+    position: relative;
+  }
+
+  /* One rectangle per screen, to scale; the padding leaves a gap between neighbours. */
+  .screen {
+    position: absolute;
+    box-sizing: border-box;
+    padding: 2px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .face {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: #262626;
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .screen.hover .face {
+    border-color: var(--muted);
+    color: var(--text);
+  }
+
+  .screen.chosen .face {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 30%, #262626);
+    color: #fff;
   }
 
   .mark {
