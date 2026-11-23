@@ -14,6 +14,7 @@ pub const VIDEO_SCHEME: &str = "lsvideo";
 
 const SUPPORTED_EXTENSIONS: [&str; 4] = ["mp4", "m4v", "mov", "webm"];
 const VIDEO_CONTROL_EVENT: &str = "video-control";
+const VIDEO_SEEK_EVENT: &str = "video-seek";
 
 /// Upper bound for one response. The webview asks for `bytes=0-` and reads as much as
 /// it needs: answering with a slice keeps a 2 GB video out of memory.
@@ -190,6 +191,15 @@ pub fn list_videos(
 #[tauri::command]
 pub fn toggle_video_playback(app: AppHandle) -> Result<(), AppError> {
     app.emit(VIDEO_CONTROL_EVENT, "toggle")?;
+    Ok(())
+}
+
+/// Asks the projection window to jump to `position` seconds in the current video.
+#[tauri::command]
+pub fn seek_video(app: AppHandle, position: f64) -> Result<(), AppError> {
+    if position.is_finite() && position >= 0.0 {
+        app.emit(VIDEO_SEEK_EVENT, position)?;
+    }
     Ok(())
 }
 

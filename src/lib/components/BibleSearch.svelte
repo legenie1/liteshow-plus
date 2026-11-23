@@ -557,6 +557,7 @@
         "left preview"
         "left queue";
       overflow-y: auto;
+      scrollbar-gutter: stable;
     }
   }
 
@@ -571,6 +572,7 @@
         "queue";
       grid-auto-rows: min-content;
       overflow-y: auto;
+      scrollbar-gutter: stable;
     }
 
     .queue {
@@ -651,7 +653,7 @@
   }
 
   input:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 1px solid var(--accent-focus);
     outline-offset: -1px;
   }
 
@@ -671,9 +673,9 @@
   }
 
   .primary {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: #fff;
+    border-color: var(--accent-line);
+    background: var(--accent-fill);
+    color: var(--accent);
   }
 
   .primary.live {
@@ -724,7 +726,7 @@
   }
 
   .hit.active {
-    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    background: var(--accent-row);
   }
 
   .hit-ref {
@@ -763,6 +765,7 @@
     min-height: 0;
     padding: 0.25rem;
     overflow-y: auto;
+    scrollbar-gutter: stable;
     border: 1px solid var(--line);
     border-radius: 6px;
     background: #1c1c1c;
@@ -818,8 +821,8 @@
   }
 
   .item.active {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    border-color: var(--accent-line);
+    background: var(--accent-row);
     color: #fff;
   }
 
@@ -832,6 +835,7 @@
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
+    scrollbar-gutter: stable;
   }
 
   .queue {

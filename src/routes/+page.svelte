@@ -10,6 +10,7 @@
   import { activeTab } from "$lib/stores/videos";
   import ProjectionView from "$lib/components/ProjectionView.svelte";
   import KeyboardShortcuts from "$lib/components/KeyboardShortcuts.svelte";
+  import ShortcutsHelp from "$lib/components/ShortcutsHelp.svelte";
 
   const isProjectionWindow = getCurrentWindow().label === "projection";
 </script>
@@ -34,6 +35,7 @@
     {/if}
   </main>
   <KeyboardShortcuts />
+  <ShortcutsHelp />
 {/if}
 
 <style>
@@ -43,6 +45,15 @@
     --line: #333;
     --surface: #262626;
     --accent: #4c9aff;
+    /* A selected control: the dark gray with a light touch of blue, no strong outline. */
+    --accent-line: color-mix(in srgb, var(--accent) 16%, var(--line));
+    --accent-fill: color-mix(in srgb, var(--accent) 7%, var(--surface));
+    /* Same idea for the other states: keyboard focus, a selected row, what is on air. */
+    --accent-focus: color-mix(in srgb, var(--accent) 40%, var(--line));
+    --accent-row: color-mix(in srgb, var(--accent) 14%, transparent);
+    --accent-strong: color-mix(in srgb, var(--accent) 55%, var(--line));
+    /* Native checkboxes and sliders: a muted blue instead of the full accent. */
+    --accent-muted: color-mix(in srgb, var(--accent) 55%, #8a8a8a);
     --danger: #e5484d;
     --theme: #f5b301;
     color-scheme: dark;

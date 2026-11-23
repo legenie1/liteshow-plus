@@ -34,6 +34,7 @@
     margin: 0;
     padding: 1rem;
     overflow-y: auto;
+    scrollbar-gutter: stable;
     list-style: none;
   }
 

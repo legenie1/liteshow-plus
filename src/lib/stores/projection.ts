@@ -1,6 +1,7 @@
 import { get, writable } from "svelte/store";
 import { invoke } from "@tauri-apps/api/core";
 import type { PrayerPoint } from "$lib/types";
+import type { VideoProgress } from "$lib/video";
 
 export const currentImage = writable<string | null>(null);
 // File name of the projected video: images and videos never show together.
@@ -9,6 +10,8 @@ export const currentPrayer = writable<PrayerPoint | null>(null);
 export const isBlackout = writable<boolean>(false);
 export const videoLoop = writable<boolean>(false);
 export const videoMuted = writable<boolean>(false);
+/** Position of the projected video, reported by the projection window. */
+export const videoProgress = writable<VideoProgress | null>(null);
 /** What was on the screen, remembered while the output is switched off. */
 export interface Output {
   image: string | null;
@@ -93,6 +96,10 @@ export async function selectPrayer(prayer: PrayerPoint | null): Promise<void> {
 
 export async function toggleVideoPlayback(): Promise<void> {
   await invoke("toggle_video_playback");
+}
+
+export async function seekVideo(position: number): Promise<void> {
+  await invoke("seek_video", { position });
 }
 
 export async function toggleVideoLoop(): Promise<void> {

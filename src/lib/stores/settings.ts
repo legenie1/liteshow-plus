@@ -2,6 +2,7 @@ import { writable } from "svelte/store";
 import {
   parseSettings,
   type BackgroundId,
+  type LyricsAlign,
   type SlideSettings,
   type TextSize,
 } from "$lib/settings";
@@ -64,6 +65,10 @@ export function setFooter(kind: SlideKind, shown: boolean): void {
 
 export function setFooterText(text: string): void {
   slideSettings.update((s) => ({ ...s, footerText: text }));
+}
+
+export function setLyricsAlign(align: LyricsAlign): void {
+  slideSettings.update((s) => ({ ...s, lyricsAlign: align }));
 }
 
 export function setBibleTextSize(size: TextSize): void {

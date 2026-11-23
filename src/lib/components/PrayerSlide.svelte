@@ -52,6 +52,8 @@
       passages,
       content,
       baseScale,
+      // The position changes the room the text has, so the fit starts again.
+      $slideSettings.lyricsAlign,
     ];
     fit();
   });
@@ -112,7 +114,12 @@
       </div>
     </div>
   {:else}
-    <div bind:this={content} class="content" class:lyrics={kind === "lyrics"}>
+    <div
+      bind:this={content}
+      class="content"
+      class:lyrics={kind === "lyrics"}
+      data-align={kind === "lyrics" ? $slideSettings.lyricsAlign : undefined}
+    >
       <p class="title">{prayer.text.trim()}</p>
       <!-- A song's name is not repeated under its lyrics. -->
       {#if kind !== "lyrics" && (prayer.reference.trim() || prayer.verse.trim())}
@@ -289,6 +296,21 @@
   .lyrics .title {
     margin: auto 0;
     line-height: 1.14;
+  }
+
+  /* Top: the background is empty up there, so the text can sit close to the edge.
+     (Bottom keeps its margin: the footer line and the icons live down there.) */
+  .content.lyrics[data-align="top"] {
+    top: 4cqw;
+  }
+
+  /* Top and bottom: the auto margin on the other side pushes the text there. */
+  .lyrics[data-align="top"] .title {
+    margin: 0 0 auto;
+  }
+
+  .lyrics[data-align="bottom"] .title {
+    margin: auto 0 0;
   }
 
   .scripture {

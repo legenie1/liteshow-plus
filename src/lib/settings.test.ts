@@ -54,4 +54,15 @@ describe("parseSettings", () => {
     });
     expect(parseSettings(saved).backgrounds.lyrics).toBe("green");
   });
+
+  it("reads the lyrics position and falls back to centred", () => {
+    const saved = JSON.stringify({
+      version: SETTINGS_VERSION,
+      lyricsAlign: "top",
+    });
+    expect(parseSettings(saved).lyricsAlign).toBe("top");
+    expect(
+      parseSettings(JSON.stringify({ lyricsAlign: "left" })).lyricsAlign,
+    ).toBe("center");
+  });
 });

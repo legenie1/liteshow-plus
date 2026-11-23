@@ -18,6 +18,7 @@
   import { loadTheme, showTheme, themeImage } from "$lib/stores/theme";
   import { boardKindForTab } from "$lib/board";
   import { setBoardKind } from "$lib/stores/board";
+  import { shortcutsOpen } from "$lib/stores/shortcuts";
   import { t } from "$lib/i18n";
   import DisplayMenu from "$lib/components/DisplayMenu.svelte";
   import OnAirLight from "$lib/components/OnAirLight.svelte";
@@ -181,6 +182,13 @@
     {$t("blackout")} <kbd>B</kbd>
   </button>
 
+  <button
+    class="help-button"
+    title={$t("shortcutsButton")}
+    aria-label={$t("shortcutsButton")}
+    onclick={() => shortcutsOpen.set(true)}>?</button
+  >
+
   <SettingsMenu />
 </header>
 
@@ -189,10 +197,30 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.6rem 1rem;
-    flex-wrap: wrap;
+    box-sizing: border-box;
+    /* Fixed height, no wrapping: the bar content differs per tab, and a bar that
+       gains or loses a row makes the whole page jump when switching tabs. */
+    height: 3.2rem;
+    flex: none;
+    padding: 0 1rem;
+    flex-wrap: nowrap;
     border-bottom: 1px solid var(--line);
     font-size: 0.875rem;
+  }
+
+  .control-bar > :global(*) {
+    flex-shrink: 0;
+  }
+
+  .control-bar > .folder,
+  .control-bar > .error {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .control-bar > .spacer {
+    flex-shrink: 1;
+    min-width: 0;
   }
 
   button {
@@ -248,8 +276,14 @@
 
   .tabs button.active {
     position: relative;
-    border-color: var(--accent);
+    border-color: var(--accent-line);
+    background: var(--accent-fill);
     color: var(--accent);
+  }
+
+  .help-button {
+    width: 2rem;
+    padding: 0;
   }
 
   .theme-button.active {
@@ -282,6 +316,9 @@
   }
 
   .error {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--danger);
   }
 </style>

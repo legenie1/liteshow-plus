@@ -9,6 +9,9 @@ export type BackgroundId = (typeof BACKGROUNDS)[number];
 export const TEXT_SIZES = ["small", "normal", "large", "huge"] as const;
 export type TextSize = (typeof TEXT_SIZES)[number];
 
+export const LYRICS_ALIGNS = ["top", "center", "bottom"] as const;
+export type LyricsAlign = (typeof LYRICS_ALIGNS)[number];
+
 /** Multiplies the text sizes; a long text still shrinks to fit on top of it. */
 export const TEXT_SCALE: Record<TextSize, number> = {
   small: 0.85,
@@ -32,6 +35,8 @@ export interface SlideSettings {
   /** Text between stars is drawn small and yellow. Empty = no footer at all. */
   footerText: string;
   bibleTextSize: TextSize;
+  /** Where the lyrics sit on the slide, as in a word processor. */
+  lyricsAlign: LyricsAlign;
 }
 
 export const DEFAULT_SETTINGS: SlideSettings = {
@@ -45,6 +50,7 @@ export const DEFAULT_SETTINGS: SlideSettings = {
   footers: { prayer: true, bible: false, dictionary: true, lyrics: true },
   footerText: DEFAULT_FOOTER,
   bibleTextSize: "normal",
+  lyricsAlign: "center",
 };
 
 function pick<T extends string>(
@@ -62,6 +68,7 @@ function pick<T extends string>(
 export function parseSettings(raw: string | null): SlideSettings {
   let data: Record<string, Record<string, unknown>> & {
     bibleTextSize?: unknown;
+    lyricsAlign?: unknown;
     footerText?: unknown;
     version?: unknown;
   } = {};
@@ -93,6 +100,11 @@ export function parseSettings(raw: string | null): SlideSettings {
     TEXT_SIZES,
     data.bibleTextSize,
     settings.bibleTextSize,
+  );
+  settings.lyricsAlign = pick(
+    LYRICS_ALIGNS,
+    data.lyricsAlign,
+    settings.lyricsAlign,
   );
   return settings;
 }

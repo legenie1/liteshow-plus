@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AlignToolbar from "$lib/components/AlignToolbar.svelte";
   import {
     bibleLayout,
     chooseTranslation,
@@ -30,6 +31,14 @@
 
   // Global settings: one popup for the whole app, one section per topic.
   let open = $state(false);
+
+  const TABS = [
+    { id: "general", label: "settingsTabGeneral" },
+    { id: "appearance", label: "settingsTabAppearance" },
+    { id: "bible", label: "tabBible" },
+    { id: "lyrics", label: "tabLyrics" },
+  ] as const;
+  let tab = $state<(typeof TABS)[number]["id"]>("appearance");
   let root = $state<HTMLDivElement>();
 
   function onWindowPointerDown(event: PointerEvent) {
@@ -115,128 +124,167 @@
   </button>
   {#if open}
     <div class="popup" role="dialog" aria-label={$t("settings")}>
-      <section>
-        <label class="row">
-          <span class="section-title">{$t("language")}</span>
-          <select
-            value={$language}
-            onchange={(event) =>
-              setLanguage(event.currentTarget.value as Language)}
+      <div class="tabs" role="tablist">
+        {#each TABS as { id, label } (id)}
+          <button
+            role="tab"
+            class:active={tab === id}
+            aria-selected={tab === id}
+            onclick={() => (tab = id)}>{$t(label)}</button
           >
-            {#each interfaceLanguages as code (code)}
-              <option value={code}>{languageName[code]}</option>
+        {/each}
+      </div>
+
+      <div class="panel">
+        {#if tab === "general"}
+          <section>
+            <label class="row">
+              <span class="section-title">{$t("language")}</span>
+              <select
+                value={$language}
+                onchange={(event) =>
+                  setLanguage(event.currentTarget.value as Language)}
+              >
+                {#each interfaceLanguages as code (code)}
+                  <option value={code}>{languageName[code]}</option>
+                {/each}
+              </select>
+            </label>
+          </section>
+        {:else if tab === "appearance"}
+          <section>
+            <span class="section-title">{$t("settingsBackgrounds")}</span>
+            {#each KINDS as kind (kind)}
+              <label class="row">
+                <span>{$t(kindLabel[kind])}</span>
+                <select
+                  value={$slideSettings.backgrounds[kind]}
+                  onchange={(event) =>
+                    setBackground(
+                      kind,
+                      event.currentTarget.value as BackgroundId,
+                    )}
+                >
+                  {#each BACKGROUNDS as id (id)}
+                    <option value={id}>{$t(backgroundLabel[id])}</option>
+                  {/each}
+                </select>
+              </label>
             {/each}
-          </select>
-        </label>
-      </section>
+          </section>
 
-      <section>
-        <span class="section-title">{$t("settingsBackgrounds")}</span>
-        {#each KINDS as kind (kind)}
-          <label class="row">
-            <span>{$t(kindLabel[kind])}</span>
-            <select
-              value={$slideSettings.backgrounds[kind]}
-              onchange={(event) =>
-                setBackground(kind, event.currentTarget.value as BackgroundId)}
-            >
-              {#each BACKGROUNDS as id (id)}
-                <option value={id}>{$t(backgroundLabel[id])}</option>
+          <section>
+            <span class="section-title">{$t("settingsFooter")}</span>
+            <label class="stack">
+              <span class="field-label">{$t("settingsFooterText")}</span>
+              <input
+                type="text"
+                value={$slideSettings.footerText}
+                oninput={(event) => setFooterText(event.currentTarget.value)}
+              />
+              <span class="field-label">{$t("settingsFooterHint")}</span>
+            </label>
+            {#each KINDS as kind (kind)}
+              <label class="row">
+                <span>{$t(kindLabel[kind])}</span>
+                <input
+                  type="checkbox"
+                  checked={$slideSettings.footers[kind]}
+                  onchange={(event) =>
+                    setFooter(kind, event.currentTarget.checked)}
+                />
+              </label>
+            {/each}
+          </section>
+        {:else if tab === "bible"}
+          <section>
+            <span class="section-title">{$t("settingsTranslations")}</span>
+            {#each languages as { language, label } (language)}
+              <label class="row">
+                <span>{$t(label)}</span>
+                <select
+                  value={$translationChoice[language] ?? ""}
+                  disabled={!translations.some(
+                    (tr) => tr.language === language,
+                  )}
+                  onchange={(event) =>
+                    chooseTranslation(language, event.currentTarget.value)}
+                >
+                  {#each translations.filter((tr) => tr.language === language) as translation (translation.id)}
+                    <option value={translation.id}>{translation.label}</option>
+                  {/each}
+                </select>
+              </label>
+            {/each}
+          </section>
+
+          <section>
+            <span class="section-title">{$t("bibleTemplate")}</span>
+            <div class="templates">
+              {#each layouts as { layout, label } (layout)}
+                <button
+                  class="template"
+                  class:active={$bibleLayout === layout}
+                  aria-pressed={$bibleLayout === layout}
+                  onclick={() => bibleLayout.set(layout)}
+                >
+                  <!-- A tiny sketch of the slide, on the scripture background. -->
+                  <span class="sketch {layout}">
+                    {#if layout === "stacked"}
+                      <i class="s-title"></i>
+                      <i class="s-ref"></i>
+                      <i class="s-line"></i>
+                      <i class="s-line short"></i>
+                      <i class="s-gap"></i>
+                      <i class="s-line"></i>
+                      <i class="s-line short"></i>
+                    {:else}
+                      <i class="s-pill"></i>
+                      <i class="s-line"></i>
+                      <i class="s-line short"></i>
+                      <i class="s-rule"></i>
+                      <i class="s-pill"></i>
+                      <i class="s-line"></i>
+                      <i class="s-line short"></i>
+                    {/if}
+                  </span>
+                  <span class="template-name">{$t(label)}</span>
+                </button>
               {/each}
-            </select>
-          </label>
-        {/each}
-      </section>
+            </div>
+          </section>
 
-      <section>
-        <span class="section-title">{$t("settingsFooter")}</span>
-        <label class="stack">
-          <span class="field-label">{$t("settingsFooterText")}</span>
-          <input
-            type="text"
-            value={$slideSettings.footerText}
-            oninput={(event) => setFooterText(event.currentTarget.value)}
-          />
-          <span class="field-label">{$t("settingsFooterHint")}</span>
-        </label>
-        {#each KINDS as kind (kind)}
-          <label class="row">
-            <span>{$t(kindLabel[kind])}</span>
-            <input
-              type="checkbox"
-              checked={$slideSettings.footers[kind]}
-              onchange={(event) => setFooter(kind, event.currentTarget.checked)}
-            />
-          </label>
-        {/each}
-      </section>
-
-      <section>
-        <span class="section-title">{$t("settingsTranslations")}</span>
-        {#each languages as { language, label } (language)}
-          <label class="row">
-            <span>{$t(label)}</span>
-            <select
-              value={$translationChoice[language] ?? ""}
-              disabled={!translations.some((tr) => tr.language === language)}
-              onchange={(event) =>
-                chooseTranslation(language, event.currentTarget.value)}
-            >
-              {#each translations.filter((tr) => tr.language === language) as translation (translation.id)}
-                <option value={translation.id}>{translation.label}</option>
+          <section>
+            <span class="section-title">{$t("settingsBibleTextSize")}</span>
+            <div class="sizes" role="group">
+              {#each TEXT_SIZES as size (size)}
+                <button
+                  class:active={$slideSettings.bibleTextSize === size}
+                  aria-pressed={$slideSettings.bibleTextSize === size}
+                  onclick={() => setBibleTextSize(size)}
+                  >{$t(sizeLabel[size])}</button
+                >
               {/each}
-            </select>
-          </label>
-        {/each}
-      </section>
-
-      <section>
-        <span class="section-title">{$t("settingsBible")}</span>
-        <span class="field-label">{$t("bibleTemplate")}</span>
-        <div class="templates">
-          {#each layouts as { layout, label } (layout)}
-            <button
-              class="template"
-              class:active={$bibleLayout === layout}
-              aria-pressed={$bibleLayout === layout}
-              onclick={() => bibleLayout.set(layout)}
+            </div>
+          </section>
+        {:else}
+          <section>
+            <span class="section-title">{$t("settingsLyricsPosition")}</span>
+            <AlignToolbar />
+            <!-- The slide in miniature: three lines, placed as the settings say. -->
+            <span
+              class="lyrics-sketch"
+              data-v={$slideSettings.lyricsAlign}
+              aria-hidden="true"
             >
-              <!-- A tiny sketch of the slide, on the scripture background. -->
-              <span class="sketch {layout}">
-                {#if layout === "stacked"}
-                  <i class="s-title"></i>
-                  <i class="s-ref"></i>
-                  <i class="s-line"></i>
-                  <i class="s-line short"></i>
-                  <i class="s-gap"></i>
-                  <i class="s-line"></i>
-                  <i class="s-line short"></i>
-                {:else}
-                  <i class="s-pill"></i>
-                  <i class="s-line"></i>
-                  <i class="s-line short"></i>
-                  <i class="s-rule"></i>
-                  <i class="s-pill"></i>
-                  <i class="s-line"></i>
-                  <i class="s-line short"></i>
-                {/if}
+              <span class="block">
+                <i></i><i class="short"></i><i></i>
               </span>
-              <span class="template-name">{$t(label)}</span>
-            </button>
-          {/each}
-        </div>
-        <span class="field-label">{$t("settingsBibleTextSize")}</span>
-        <div class="sizes" role="group">
-          {#each TEXT_SIZES as size (size)}
-            <button
-              class:active={$slideSettings.bibleTextSize === size}
-              aria-pressed={$slideSettings.bibleTextSize === size}
-              onclick={() => setBibleTextSize(size)}
-              >{$t(sizeLabel[size])}</button
-            >
-          {/each}
-        </div>
-      </section>
+            </span>
+            <span class="field-label">{$t("settingsLyricsHint")}</span>
+          </section>
+        {/if}
+      </div>
     </div>
   {/if}
 </div>
@@ -282,20 +330,101 @@
     z-index: 10;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    width: 20rem;
-    max-height: calc(100vh - 5rem);
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    /* The same thin, discreet bar as the lists of the Bible tab. */
-    scrollbar-width: thin;
-    scrollbar-color: #3d3d3d transparent;
+    gap: 0.75rem;
+    box-sizing: border-box;
+    width: 22rem;
+    /* A fixed height: switching tab must not resize the popup. */
+    height: min(30rem, calc(100vh - 5rem));
     padding: 0.75rem;
     border: 1px solid var(--line);
     border-radius: 8px;
     background: #1c1c1c;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+
+  .tabs {
+    flex: none;
+    display: flex;
+  }
+
+  .tabs button {
+    flex: 1;
+    padding: 0 0.25rem;
+    border-radius: 0;
+    font-size: 0.8rem;
+  }
+
+  .tabs button:first-child {
+    border-radius: 6px 0 0 6px;
+  }
+
+  .tabs button:not(:first-child) {
+    margin-left: -1px;
+  }
+
+  .tabs button:last-child {
+    border-radius: 0 6px 6px 0;
+  }
+
+  .tabs button.active {
+    position: relative;
+    border-color: var(--accent-line);
+    background: var(--accent-fill);
+    color: var(--accent);
+  }
+
+  .panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    padding-right: 0.25rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+    /* The same thin, discreet bar as the lists of the Bible tab. */
+    scrollbar-width: thin;
+    scrollbar-color: #3d3d3d transparent;
+  }
+
+  /* The lyrics slide in miniature, so the position can be read at a glance. */
+  .lyrics-sketch {
+    display: flex;
+    aspect-ratio: 16 / 9;
+    padding: 10% 12%;
+    border-radius: 4px;
+    background: #222 url("../../assets/lyrics_bg.jpg") center / cover;
+  }
+
+  .lyrics-sketch .block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    margin: auto;
+  }
+
+  .lyrics-sketch[data-v="top"] .block {
+    margin-top: 0;
+  }
+
+  .lyrics-sketch[data-v="bottom"] .block {
+    margin-bottom: 0;
+  }
+
+  .lyrics-sketch i {
+    display: block;
+    width: 85%;
+    margin-inline: auto;
+    height: 5px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.85);
+  }
+
+  .lyrics-sketch i.short {
+    width: 55%;
   }
 
   .section-title {
@@ -319,7 +448,8 @@
   }
 
   .template.active {
-    border-color: var(--accent);
+    border-color: var(--accent-line);
+    background: var(--accent-fill);
   }
 
   .template-name {
@@ -432,14 +562,14 @@
   }
 
   input[type="text"]:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 1px solid var(--accent-focus);
     outline-offset: -1px;
   }
 
   input[type="checkbox"] {
     width: 1.1rem;
     height: 1.1rem;
-    accent-color: var(--accent);
+    accent-color: var(--accent-muted);
   }
 
   .sizes {
@@ -467,7 +597,8 @@
 
   .sizes button.active {
     position: relative;
-    border-color: var(--accent);
+    border-color: var(--accent-line);
+    background: var(--accent-fill);
     color: var(--accent);
   }
 

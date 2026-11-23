@@ -374,6 +374,7 @@
         "form preview"
         "form queue";
       overflow-y: auto;
+      scrollbar-gutter: stable;
     }
   }
 
@@ -402,6 +403,7 @@
     min-width: 0;
     min-height: 0;
     overflow-y: auto;
+    scrollbar-gutter: stable;
   }
 
   .field {
@@ -520,6 +522,7 @@
     gap: 0.35rem;
     max-height: 6.5rem;
     overflow-y: auto;
+    scrollbar-gutter: stable;
   }
 
   .link {
@@ -557,6 +560,7 @@
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
+    scrollbar-gutter: stable;
   }
 
   .queue {

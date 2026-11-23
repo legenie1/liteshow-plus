@@ -2,12 +2,13 @@
   import { untrack } from "svelte";
   import { fade } from "svelte/transition";
   import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-  import { listen } from "@tauri-apps/api/event";
+  import { emit, listen } from "@tauri-apps/api/event";
   import { fadeMs, slideKey } from "$lib/fade";
   import { board } from "$lib/stores/board";
   import { t } from "$lib/i18n";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
   import type { PrayerPoint, ProjectionState } from "$lib/types";
+  import type { VideoProgress } from "$lib/video";
 
   let imagePath = $state<string | null>(null);
   let blackout = $state(false);
@@ -66,6 +67,28 @@
       unlisten.then((fn) => fn());
     };
   });
+
+  $effect(() => {
+    const unlisten = listen<number>("video-seek", (event) => {
+      if (videoEl) videoEl.currentTime = event.payload;
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  });
+
+  // Tells the control window where the video is: it draws the preview and the
+  // progress bar from this. `timeupdate` fires about four times a second.
+  function reportProgress() {
+    if (!videoEl || !videoName) return;
+    const progress: VideoProgress = {
+      name: videoName,
+      time: videoEl.currentTime,
+      duration: Number.isFinite(videoEl.duration) ? videoEl.duration : 0,
+      paused: videoEl.paused,
+    };
+    void emit("video-progress", progress);
+  }
 
   // The sound would keep going behind the blackout.
   $effect(() => {
@@ -136,6 +159,11 @@
         loop={videoLoop}
         muted={videoMuted}
         onerror={() => (videoError = true)}
+        ontimeupdate={reportProgress}
+        onplay={reportProgress}
+        onpause={reportProgress}
+        onseeked={reportProgress}
+        onloadedmetadata={reportProgress}
       ></video>
     {/key}
   {:else if prayer && !blackout}

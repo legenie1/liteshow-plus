@@ -24,6 +24,7 @@
   import { t } from "$lib/i18n";
   import type { QueueItem } from "$lib/queue";
   import { songQueue } from "$lib/stores/queue";
+  import AlignToolbar from "$lib/components/AlignToolbar.svelte";
   import LiveScreen from "$lib/components/LiveScreen.svelte";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
   import QueueList from "$lib/components/QueueList.svelte";
@@ -454,7 +455,10 @@
     </section>
 
     <section class="preview-pane">
-      <span class="label">{$t("prayerPreview")}</span>
+      <div class="preview-head">
+        <span class="label">{$t("prayerPreview")}</span>
+        <AlignToolbar />
+      </div>
       <div class="stage">
         {#if preview}
           <PrayerSlide prayer={preview} />
@@ -511,6 +515,16 @@
 
   .stage {
     width: min(100%, var(--stage-w));
+  }
+
+  /* Fixed height: the toolbar must not move the slides under it. */
+  .preview-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: min(100%, var(--stage-w));
+    height: 1.9rem;
   }
 
   /* The queue sits under the list of songs, in its own rectangle. */
@@ -632,7 +646,7 @@
 
   input:focus-visible,
   textarea:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 1px solid var(--accent-focus);
     outline-offset: -1px;
   }
 
@@ -652,9 +666,9 @@
   }
 
   .primary {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: #fff;
+    border-color: var(--accent-line);
+    background: var(--accent-fill);
+    color: var(--accent);
   }
 
   .danger {
@@ -703,7 +717,7 @@
   }
 
   .song.active {
-    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    background: var(--accent-row);
   }
 
   .song-title {
@@ -775,12 +789,12 @@
   }
 
   .row:focus-within {
-    border-color: var(--accent);
+    border-color: var(--accent-focus);
   }
 
   .row:focus-within .num {
-    background: var(--accent);
-    color: #fff;
+    background: var(--accent-fill);
+    color: var(--accent);
   }
 
   .rows {
@@ -924,12 +938,12 @@
   }
 
   .slide.active {
-    border-color: var(--accent);
+    border-color: var(--accent-line);
   }
 
   .slide.active .num {
-    background: var(--accent);
-    color: #fff;
+    background: var(--accent-fill);
+    color: var(--accent);
   }
 
   /* The slide on screen right now. */

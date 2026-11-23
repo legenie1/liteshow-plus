@@ -9,8 +9,11 @@
     videoMuted,
   } from "$lib/stores/projection";
   import VideoRow from "$lib/components/VideoRow.svelte";
+  import VideoPlayer from "$lib/components/VideoPlayer.svelte";
   import { t } from "$lib/i18n";
 </script>
+
+<VideoPlayer />
 
 {#if $videos.length === 0}
   <p class="empty">{$t("noVideos")}</p>
@@ -42,6 +45,7 @@
     margin: 0;
     padding: 1rem;
     overflow-y: auto;
+    scrollbar-gutter: stable;
     list-style: none;
   }
 
