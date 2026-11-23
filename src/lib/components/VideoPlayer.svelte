@@ -185,7 +185,7 @@
   }
 
   .play:hover:not(:disabled) {
-    border-color: var(--accent);
+    border-color: var(--accent-line);
     color: var(--accent);
   }
 
@@ -206,6 +206,6 @@
   .bar {
     flex: 1;
     min-width: 0;
-    accent-color: var(--accent);
+    accent-color: var(--accent-muted);
   }
 </style>

@@ -440,7 +440,7 @@
 
   input:focus-visible,
   textarea:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 1px solid var(--accent-focus);
     outline-offset: -1px;
   }
 
@@ -489,9 +489,9 @@
   }
 
   .primary {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: #fff;
+    border-color: var(--accent-line);
+    background: var(--accent-fill);
+    color: var(--accent);
   }
 
   .primary.live {
@@ -547,7 +547,7 @@
   }
 
   .chip.live {
-    border-color: var(--accent);
+    border-color: var(--accent-line);
     color: var(--accent);
   }
 

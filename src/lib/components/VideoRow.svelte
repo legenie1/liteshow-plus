@@ -176,8 +176,9 @@
   }
 
   .option.on {
-    border-color: var(--accent);
-    background: var(--accent);
+    border-color: var(--accent-line);
+    background: var(--accent-fill);
+    color: var(--accent);
   }
 
   .name {
@@ -206,6 +207,6 @@
   }
 
   .slide.selected .thumb {
-    outline: 3px solid var(--accent);
+    outline: 2px solid var(--accent-strong);
   }
 </style>

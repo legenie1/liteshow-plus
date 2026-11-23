@@ -119,13 +119,13 @@
   }
 
   .row:not(.off) .switch {
-    border-color: var(--accent);
+    border-color: var(--accent-line);
   }
 
   .row:not(.off) .box {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: #fff;
+    border-color: var(--accent-line);
+    background: var(--accent-fill);
+    color: var(--accent);
   }
 
   .row.off .switch {

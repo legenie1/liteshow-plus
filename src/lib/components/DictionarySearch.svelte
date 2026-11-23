@@ -249,7 +249,7 @@
   }
 
   input:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 1px solid var(--accent-focus);
     outline-offset: -1px;
   }
 
@@ -291,9 +291,9 @@
   }
 
   .primary {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: #fff;
+    border-color: var(--accent-line);
+    background: var(--accent-fill);
+    color: var(--accent);
   }
 
   .primary.live {
@@ -345,7 +345,7 @@
   }
 
   .definition.active {
-    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    background: var(--accent-row);
   }
 
   .meta {

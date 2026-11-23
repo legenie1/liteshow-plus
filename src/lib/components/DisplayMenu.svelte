@@ -273,8 +273,8 @@
   }
 
   .screen.chosen .face {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 30%, #262626);
+    border-color: var(--accent-line);
+    background: var(--accent-fill);
     color: #fff;
   }
 

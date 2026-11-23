@@ -167,12 +167,12 @@
 
   /* Previewed, like the chosen book. */
   li.selected {
-    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    background: var(--accent-row);
   }
 
   /* On the projector: a bar on the left, whatever else the row is doing. */
   li.live {
-    box-shadow: inset 3px 0 0 var(--accent);
+    box-shadow: inset 3px 0 0 var(--accent-strong);
   }
 
   .main {

@@ -165,6 +165,6 @@
   }
 
   .slide.selected .thumb {
-    outline: 3px solid var(--accent);
+    outline: 2px solid var(--accent-strong);
   }
 </style>
