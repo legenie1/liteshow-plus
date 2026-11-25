@@ -11,6 +11,7 @@
   import ProjectionView from "$lib/components/ProjectionView.svelte";
   import KeyboardShortcuts from "$lib/components/KeyboardShortcuts.svelte";
   import ShortcutsHelp from "$lib/components/ShortcutsHelp.svelte";
+  import ImageDrop from "$lib/components/ImageDrop.svelte";
 
   const isProjectionWindow = getCurrentWindow().label === "projection";
 </script>
@@ -36,6 +37,7 @@
   </main>
   <KeyboardShortcuts />
   <ShortcutsHelp />
+  <ImageDrop />
 {/if}
 
 <style>
