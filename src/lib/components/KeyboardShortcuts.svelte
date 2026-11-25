@@ -7,6 +7,9 @@
     currentImage,
     currentVideo,
     resumeImage,
+    clearSection,
+    markSectionEnd,
+    markSectionStart,
     seekVideo,
     selectImage,
     selectVideo,
@@ -124,6 +127,24 @@
       case "M":
         event.preventDefault();
         if (get(activeTab) === "videos") toggleVideoMute();
+        break;
+      case "i":
+      case "I":
+        if (get(activeTab) !== "videos") break;
+        event.preventDefault();
+        void markSectionStart();
+        break;
+      case "o":
+      case "O":
+        if (get(activeTab) !== "videos") break;
+        event.preventDefault();
+        void markSectionEnd();
+        break;
+      case "x":
+      case "X":
+        if (get(activeTab) !== "videos") break;
+        event.preventDefault();
+        void clearSection();
         break;
       case "Enter": {
         const name = get(previewVideo);

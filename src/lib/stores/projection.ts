@@ -1,7 +1,13 @@
 import { get, writable } from "svelte/store";
 import { invoke } from "@tauri-apps/api/core";
+import { emit } from "@tauri-apps/api/event";
 import type { PrayerPoint } from "$lib/types";
-import type { VideoProgress } from "$lib/video";
+import {
+  markEnd,
+  markStart,
+  type VideoProgress,
+  type VideoSection,
+} from "$lib/video";
 
 export const currentImage = writable<string | null>(null);
 // File name of the projected video: images and videos never show together.
@@ -12,6 +18,8 @@ export const videoLoop = writable<boolean>(false);
 export const videoMuted = writable<boolean>(false);
 /** Position of the projected video, reported by the projection window. */
 export const videoProgress = writable<VideoProgress | null>(null);
+/** The part of the projected video that loops, if any. */
+export const videoSection = writable<VideoSection | null>(null);
 /** What was on the screen, remembered while the output is switched off. */
 export interface Output {
   image: string | null;
@@ -76,6 +84,8 @@ export function toggleOutput(): Promise<void> {
 
 export async function selectVideo(name: string | null): Promise<void> {
   currentVideo.set(name);
+  // The projection window drops its loop on its own when the serial changes.
+  videoSection.set(null);
   currentImage.set(null);
   currentPrayer.set(null);
   isBlackout.set(false);
@@ -100,6 +110,37 @@ export async function toggleVideoPlayback(): Promise<void> {
 
 export async function seekVideo(position: number): Promise<void> {
   await invoke("seek_video", { position });
+}
+
+async function setSection(section: VideoSection | null): Promise<void> {
+  videoSection.set(section);
+  // The projection window enforces it: it is the one that knows where the video is.
+  await emit("video-section", section);
+}
+
+function projectedProgress(): VideoProgress | null {
+  const progress = get(videoProgress);
+  return progress && progress.name === get(currentVideo) ? progress : null;
+}
+
+/** The loop starts where the projected video is now. */
+export async function markSectionStart(): Promise<void> {
+  const progress = projectedProgress();
+  if (!progress) return;
+  const next = markStart(get(videoSection), progress.time, progress.duration);
+  if (next !== get(videoSection)) await setSection(next);
+}
+
+/** The loop ends where the projected video is now. */
+export async function markSectionEnd(): Promise<void> {
+  const progress = projectedProgress();
+  if (!progress) return;
+  const next = markEnd(get(videoSection), progress.time);
+  if (next !== get(videoSection)) await setSection(next);
+}
+
+export async function clearSection(): Promise<void> {
+  if (get(videoSection)) await setSection(null);
 }
 
 export async function toggleVideoLoop(): Promise<void> {

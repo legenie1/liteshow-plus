@@ -6,6 +6,37 @@ export interface VideoProgress {
   paused: boolean;
 }
 
+/** A part of the video that plays again and again, in seconds. */
+export interface VideoSection {
+  start: number;
+  end: number;
+}
+
+/** Shortest loop worth having: below this the video would only stutter. */
+export const MIN_SECTION = 0.5;
+
+/** The loop starts at `time`; its end stays where it was, else the video's end. */
+export function markStart(
+  section: VideoSection | null,
+  time: number,
+  duration: number,
+): VideoSection | null {
+  if (!(duration > time + MIN_SECTION)) return section;
+  const end =
+    section && section.end > time + MIN_SECTION ? section.end : duration;
+  return { start: time, end };
+}
+
+/** The loop ends at `time`; its start stays where it was, else the video's start. */
+export function markEnd(
+  section: VideoSection | null,
+  time: number,
+): VideoSection | null {
+  const start = section?.start ?? 0;
+  if (time < start + MIN_SECTION) return section;
+  return { start, end: time };
+}
+
 /** 83.4 -> "1:23", 3725 -> "1:02:05". Unknown values read as 0:00. */
 export function formatTime(seconds: number): string {
   const total =

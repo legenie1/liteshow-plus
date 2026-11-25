@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { formatTime, jumpTarget, needsResync } from "./video";
+import {
+  formatTime,
+  jumpTarget,
+  needsResync,
+  markEnd,
+  markStart,
+} from "./video";
 
 describe("formatTime", () => {
   it("formats minutes and seconds", () => {
@@ -34,5 +40,43 @@ describe("needsResync", () => {
   });
   it("is stricter when paused", () => {
     expect(needsResync(10, 10.3, false)).toBe(true);
+  });
+});
+
+describe("loop section", () => {
+  it("starts at the playhead and runs to the end of the video", () => {
+    expect(markStart(null, 12, 100)).toEqual({ start: 12, end: 100 });
+  });
+
+  it("keeps an end that is still ahead of the new start", () => {
+    expect(markStart({ start: 5, end: 40 }, 12, 100)).toEqual({
+      start: 12,
+      end: 40,
+    });
+  });
+
+  it("pushes the end to the video's end when the start passes it", () => {
+    expect(markStart({ start: 5, end: 40 }, 60, 100)).toEqual({
+      start: 60,
+      end: 100,
+    });
+  });
+
+  it("ignores a start too close to the end of the video", () => {
+    expect(markStart(null, 99.9, 100)).toBeNull();
+  });
+
+  it("ends at the playhead, from the beginning if no start was set", () => {
+    expect(markEnd(null, 30)).toEqual({ start: 0, end: 30 });
+    expect(markEnd({ start: 12, end: 100 }, 30)).toEqual({
+      start: 12,
+      end: 30,
+    });
+  });
+
+  it("ignores an end at or before the start", () => {
+    const section = { start: 12, end: 100 };
+    expect(markEnd(section, 12.2)).toBe(section);
+    expect(markEnd(section, 3)).toBe(section);
   });
 });

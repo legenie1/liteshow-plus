@@ -153,8 +153,8 @@ const en = {
   bibleInvalid: 'Reference not recognized. Try "John 3:16" or "1 Cor 13:4-7".',
   bibleMissing: "This verse doesn't exist in the selected translation.",
   noImages: "No images. Choose a folder, or drop images here.",
-  dropImages: "Drop images to add them to the slides",
-  noVideos: "No videos. Choose a folder to get started.",
+  dropImages: "Drop images or videos to add them",
+  noVideos: "No videos. Choose a folder, or drop videos here.",
   loop: "Loop",
   loopTitle: "Replay on a loop (L)",
   mute: "Mute",
@@ -188,6 +188,13 @@ const en = {
   videoPlay: "Play",
   videoPause: "Pause",
   videoProgress: "Position in the video",
+  videoSectionStart: "Loop start",
+  videoSectionEnd: "Loop end",
+  videoSectionClear: "Clear loop",
+  videoSectionNone: "No loop: the whole video plays",
+  shortcutSectionStart: "Loop starts here (projected video)",
+  shortcutSectionEnd: "Loop ends here",
+  shortcutSectionClear: "Clear the loop",
 };
 
 export type MessageKey = keyof typeof en;
@@ -345,8 +352,8 @@ const fr: Record<MessageKey, string> = {
     "Référence non reconnue. Essaie « Jean 3:16 » ou « 1 Cor 13:4-7 ».",
   bibleMissing: "Ce verset n'existe pas dans la traduction choisie.",
   noImages: "Aucune image. Choisis un dossier, ou glisse des images ici.",
-  dropImages: "Lâche les images pour les ajouter aux diapos",
-  noVideos: "Aucune vidéo. Choisis un dossier pour commencer.",
+  dropImages: "Lâche des images ou des vidéos pour les ajouter",
+  noVideos: "Aucune vidéo. Choisis un dossier, ou glisse des vidéos ici.",
   loop: "Boucle",
   loopTitle: "Rejouer en boucle (L)",
   mute: "Muet",
@@ -381,6 +388,13 @@ const fr: Record<MessageKey, string> = {
   videoPlay: "Lecture",
   videoPause: "Pause",
   videoProgress: "Position dans la vidéo",
+  videoSectionStart: "Début de boucle",
+  videoSectionEnd: "Fin de boucle",
+  videoSectionClear: "Effacer la boucle",
+  videoSectionNone: "Pas de boucle : toute la vidéo joue",
+  shortcutSectionStart: "La boucle commence ici (vidéo projetée)",
+  shortcutSectionEnd: "La boucle finit ici",
+  shortcutSectionClear: "Effacer la boucle",
 };
 
 const messages = { en, fr };

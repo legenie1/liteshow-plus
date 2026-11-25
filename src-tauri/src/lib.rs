@@ -39,6 +39,7 @@ pub fn run() {
             commands::projection::toggle_video_loop,
             commands::projection::toggle_video_mute,
             commands::videos::list_videos,
+            commands::videos::add_videos,
             commands::videos::toggle_video_playback,
             commands::videos::seek_video,
         ])

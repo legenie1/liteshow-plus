@@ -2,10 +2,14 @@
   import { convertFileSrc } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
   import {
+    clearSection,
     currentVideo,
+    markSectionEnd,
+    markSectionStart,
     seekVideo,
     toggleVideoPlayback,
     videoProgress,
+    videoSection,
   } from "$lib/stores/projection";
   import { formatTime, needsResync, type VideoProgress } from "$lib/video";
   import { t } from "$lib/i18n";
@@ -25,6 +29,16 @@
   const duration = $derived(progress?.duration ?? 0);
   const shownTime = $derived(scrubbing ? scrubTime : (progress?.time ?? 0));
   const paused = $derived(progress?.paused ?? true);
+  // The loop belongs to the projected video: hidden once another one is projected.
+  const section = $derived($currentVideo ? $videoSection : null);
+  const markLeft = $derived(
+    section && duration > 0 ? (section.start / duration) * 100 : 0,
+  );
+  const markWidth = $derived(
+    section && duration > 0
+      ? ((section.end - section.start) / duration) * 100
+      : 0,
+  );
 
   $effect(() => {
     const unlisten = listen<VideoProgress>("video-progress", (event) => {
@@ -95,22 +109,66 @@
       }}>{paused ? "▶" : "⏸"}</button
     >
     <span class="time">{formatTime(shownTime)}</span>
-    <input
-      class="bar"
-      type="range"
-      min="0"
-      max={duration || 1}
-      step="0.1"
-      value={shownTime}
-      disabled={!$currentVideo || duration === 0}
-      aria-label={$t("videoProgress")}
-      onpointerdown={startScrub}
-      oninput={moveScrub}
-      onpointerup={endScrub}
-      onpointercancel={endScrub}
-      onblur={endScrub}
-    />
+    <div class="barbox">
+      {#if section}
+        <span
+          class="mark"
+          style:left="{markLeft}%"
+          style:width="{markWidth}%"
+          aria-hidden="true"
+        ></span>
+      {/if}
+      <input
+        class="bar"
+        type="range"
+        min="0"
+        max={duration || 1}
+        step="0.1"
+        value={shownTime}
+        disabled={!$currentVideo || duration === 0}
+        aria-label={$t("videoProgress")}
+        onpointerdown={startScrub}
+        oninput={moveScrub}
+        onpointerup={endScrub}
+        onpointercancel={endScrub}
+        onblur={endScrub}
+      />
+    </div>
     <span class="time">{formatTime(duration)}</span>
+  </div>
+
+  <div class="loop">
+    <button
+      disabled={!progress}
+      title="{$t('videoSectionStart')} (I)"
+      onclick={(event) => {
+        void markSectionStart();
+        event.currentTarget.blur();
+      }}>{$t("videoSectionStart")}</button
+    >
+    <button
+      disabled={!progress}
+      title="{$t('videoSectionEnd')} (O)"
+      onclick={(event) => {
+        void markSectionEnd();
+        event.currentTarget.blur();
+      }}>{$t("videoSectionEnd")}</button
+    >
+    <span class="range">
+      {#if section}
+        {formatTime(section.start)} – {formatTime(section.end)}
+      {:else}
+        {$t("videoSectionNone")}
+      {/if}
+    </span>
+    <button
+      disabled={!section}
+      title="{$t('videoSectionClear')} (X)"
+      onclick={(event) => {
+        void clearSection();
+        event.currentTarget.blur();
+      }}>{$t("videoSectionClear")}</button
+    >
   </div>
 
   <div class="name" title={$currentVideo ?? ""}>{$currentVideo ?? ""}</div>
@@ -195,10 +253,69 @@
     text-align: center;
   }
 
+  .barbox {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
   .bar {
     flex: 1;
     min-width: 0;
     accent-color: var(--accent-muted);
+  }
+
+  /* The looping part, drawn under the bar. */
+  .mark {
+    position: absolute;
+    bottom: 0;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--accent-strong);
+    pointer-events: none;
+  }
+
+  .loop {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 1.8rem;
+  }
+
+  .loop button {
+    flex: none;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+
+  .loop button:hover:not(:disabled) {
+    border-color: var(--accent-line);
+    color: var(--accent);
+  }
+
+  .loop button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .range {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .name {

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
@@ -113,11 +114,18 @@ fn error_response(status: StatusCode) -> Response<Vec<u8>> {
 
 fn serve_video(app: &AppHandle, request: &Request<Vec<u8>>) -> Response<Vec<u8>> {
     let state = app.state::<AppState>();
-    let Some(folder) = state.video_folder.lock().ok().and_then(|f| f.clone()) else {
-        return error_response(StatusCode::NOT_FOUND);
-    };
-    let Some(path) = percent_decode(request.uri().path().trim_start_matches('/'))
-        .and_then(|name| resolve_video(&folder, &name))
+    let folder = state.video_folder.lock().ok().and_then(|f| f.clone());
+    let Some(path) =
+        percent_decode(request.uri().path().trim_start_matches('/')).and_then(|name| {
+            let dropped = state
+                .extra_videos
+                .lock()
+                .ok()
+                .and_then(|extra| extra.get(&name).cloned());
+            dropped
+                .filter(|path| path.is_file())
+                .or_else(|| folder.and_then(|folder| resolve_video(&folder, &name)))
+        })
     else {
         return error_response(StatusCode::NOT_FOUND);
     };
@@ -180,11 +188,78 @@ pub fn list_videos(
 
     videos.sort_by(|a, b| natural_cmp(&a.name, &b.name));
 
+    // A new folder replaces the list, dropped videos included.
+    state
+        .extra_videos
+        .lock()
+        .map_err(|_| AppError::new("extra_videos lock poisoned"))?
+        .clear();
     *state
         .video_folder
         .lock()
         .map_err(|_| AppError::new("video_folder lock poisoned"))? = Some(PathBuf::from(folder));
     Ok(videos)
+}
+
+/// A name for a dropped file that clashes with nothing already served: `name`, else
+/// `stem (2).ext`, `stem (3).ext`…
+fn unique_name(
+    name: &str,
+    folder: Option<&Path>,
+    extra: &HashMap<String, PathBuf>,
+    path: &Path,
+) -> String {
+    let taken = |candidate: &str| match extra.get(candidate) {
+        Some(existing) => existing != path,
+        None => folder.is_some_and(|folder| folder.join(candidate).is_file()),
+    };
+    if !taken(name) {
+        return name.to_string();
+    }
+    let (stem, ext) = match name.rsplit_once('.') {
+        Some((stem, ext)) => (stem, format!(".{ext}")),
+        None => (name, String::new()),
+    };
+    (2..)
+        .map(|n| format!("{stem} ({n}){ext}"))
+        .find(|candidate| !taken(candidate))
+        .unwrap_or_else(|| name.to_string())
+}
+
+/// Registers videos dropped onto the window from outside the current folder and
+/// returns the ones accepted, under the names the frontend must use from now on.
+/// The protocol still only ever receives a name, never a path.
+#[tauri::command(async)]
+pub fn add_videos(
+    state: tauri::State<AppState>,
+    paths: Vec<String>,
+) -> Result<Vec<VideoFile>, AppError> {
+    let folder = state
+        .video_folder
+        .lock()
+        .map_err(|_| AppError::new("video_folder lock poisoned"))?
+        .clone();
+    let mut extra = state
+        .extra_videos
+        .lock()
+        .map_err(|_| AppError::new("extra_videos lock poisoned"))?;
+
+    let mut added = Vec::new();
+    for raw in paths {
+        let path = PathBuf::from(raw);
+        let Some(file_name) = path.file_name().and_then(|n| n.to_str()) else {
+            continue;
+        };
+        if !path.is_file() || !is_supported_video(&path) {
+            continue;
+        }
+        let name = unique_name(file_name, folder.as_deref(), &extra, &path);
+        if extra.get(&name) != Some(&path) {
+            extra.insert(name.clone(), path);
+        }
+        added.push(VideoFile { name });
+    }
+    Ok(added)
 }
 
 /// Asks the projection window to play/pause the current video.
@@ -251,6 +326,18 @@ mod tests {
         assert_eq!(parse_range(Some("bytes=20-10"), 100), None);
         assert_eq!(parse_range(Some("items=0-1"), 100), None);
         assert_eq!(parse_range(Some("bytes=0-1"), 0), None);
+    }
+
+    #[test]
+    fn dropped_names_never_clash() {
+        let mut extra = HashMap::new();
+        let a = PathBuf::from("/a/intro.mp4");
+        let b = PathBuf::from("/b/intro.mp4");
+        assert_eq!(unique_name("intro.mp4", None, &extra, &a), "intro.mp4");
+        extra.insert("intro.mp4".to_string(), a.clone());
+        // The same file again keeps its name; another file with that name does not.
+        assert_eq!(unique_name("intro.mp4", None, &extra, &a), "intro.mp4");
+        assert_eq!(unique_name("intro.mp4", None, &extra, &b), "intro (2).mp4");
     }
 
     #[test]

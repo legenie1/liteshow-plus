@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -37,7 +38,10 @@ pub struct AppState {
     pub video_muted: Mutex<bool>,
     /// Folder last listed by `list_videos`: the only place the video protocol reads from.
     pub video_folder: Mutex<Option<PathBuf>>,
-    /// File name (not path) of the projected video, inside `video_folder`.
+    /// Videos dropped onto the window from elsewhere, by the bare name the frontend
+    /// uses for them. Cleared whenever a folder is listed.
+    pub extra_videos: Mutex<HashMap<String, PathBuf>>,
+    /// File name (not path) of the projected video: in `video_folder` or `extra_videos`.
     pub current_video: Mutex<Option<String>>,
     pub current_prayer: Mutex<Option<PrayerPoint>>,
     /// Bumped on every video selection so that picking the same video again restarts it.

@@ -8,7 +8,7 @@
   import { t } from "$lib/i18n";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
   import type { PrayerPoint, ProjectionState } from "$lib/types";
-  import type { VideoProgress } from "$lib/video";
+  import type { VideoProgress, VideoSection } from "$lib/video";
 
   let imagePath = $state<string | null>(null);
   let blackout = $state(false);
@@ -17,12 +17,18 @@
   let videoSerial = $state(0);
   let videoLoop = $state(false);
   let videoMuted = $state(false);
+  // A part of the video that plays again and again, set from the control window.
+  let section = $state<VideoSection | null>(null);
   let prayer = $state<PrayerPoint | null>(null);
   let videoEl = $state<HTMLVideoElement>();
   let error = $state<string | null>(null);
   let videoError = $state(false);
 
   function applyState(state: ProjectionState) {
+    // Another video, or the same one started over: the loop does not carry over.
+    if (state.video !== videoName || state.videoSerial !== videoSerial) {
+      section = null;
+    }
     blackout = state.blackout;
     imagePath = state.image;
     videoName = state.video;
@@ -76,6 +82,38 @@
       unlisten.then((fn) => fn());
     };
   });
+
+  $effect(() => {
+    const unlisten = listen<VideoSection | null>("video-section", (event) => {
+      section = event.payload;
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  });
+
+  function loopSection() {
+    if (!videoEl || !section || videoEl.paused) return;
+    if (videoEl.currentTime >= section.end) videoEl.currentTime = section.start;
+  }
+
+  // `timeupdate` only fires four times a second: checked every frame instead, so the
+  // jump back lands within a frame of the end marker.
+  $effect(() => {
+    if (!section || !videoEl) return;
+    let frame = requestAnimationFrame(function tick() {
+      loopSection();
+      frame = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(frame);
+  });
+
+  // A loop that runs to the very end of the video has no frame left to catch.
+  function onEnded() {
+    if (!videoEl || !section) return;
+    videoEl.currentTime = section.start;
+    void videoEl.play().catch(() => {});
+  }
 
   // Tells the control window where the video is: it draws the preview and the
   // progress bar from this. `timeupdate` fires about four times a second.
@@ -162,6 +200,7 @@
         ontimeupdate={reportProgress}
         onplay={reportProgress}
         onpause={reportProgress}
+        onended={onEnded}
         onseeked={reportProgress}
         onloadedmetadata={reportProgress}
       ></video>
