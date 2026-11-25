@@ -20,6 +20,23 @@ export const TEXT_SCALE: Record<TextSize, number> = {
   huge: 1.4,
 };
 
+/** The slide transition: from an instant cut to a slow fade, in milliseconds, typed in seconds (tenths allowed). */
+export const FADE_RANGE = {
+  min: 0,
+  max: 10000,
+  step: 100,
+  default: 1000,
+} as const;
+
+/** A duration kept inside the range, on tenths of a second. */
+export function clampFade(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return FADE_RANGE.default;
+  }
+  const stepped = Math.round(value / FADE_RANGE.step) * FADE_RANGE.step;
+  return Math.min(Math.max(stepped, FADE_RANGE.min), FADE_RANGE.max);
+}
+
 /**
  * Bumped when a default changes for people who never chose it. Settings are saved
  * in full from the first launch, so an old default can't be told from a choice:
@@ -37,6 +54,8 @@ export interface SlideSettings {
   bibleTextSize: TextSize;
   /** Where the lyrics sit on the slide, as in a word processor. */
   lyricsAlign: LyricsAlign;
+  /** How long a slide takes to fade in over the previous one; 0 = instant cut. */
+  fadeMs: number;
 }
 
 export const DEFAULT_SETTINGS: SlideSettings = {
@@ -51,6 +70,7 @@ export const DEFAULT_SETTINGS: SlideSettings = {
   footerText: DEFAULT_FOOTER,
   bibleTextSize: "normal",
   lyricsAlign: "center",
+  fadeMs: FADE_RANGE.default,
 };
 
 function pick<T extends string>(
@@ -69,6 +89,7 @@ export function parseSettings(raw: string | null): SlideSettings {
   let data: Record<string, Record<string, unknown>> & {
     bibleTextSize?: unknown;
     lyricsAlign?: unknown;
+    fadeMs?: unknown;
     footerText?: unknown;
     version?: unknown;
   } = {};
@@ -106,5 +127,6 @@ export function parseSettings(raw: string | null): SlideSettings {
     data.lyricsAlign,
     settings.lyricsAlign,
   );
+  settings.fadeMs = clampFade(data.fadeMs);
   return settings;
 }

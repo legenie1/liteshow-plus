@@ -1,16 +1,16 @@
 import type { PrayerPoint } from "$lib/types";
 
-/** How long a slide takes to fade in or out, in milliseconds. */
-export const FADE_MS = 300;
-
-/** The fade's length: none for someone who asked their system for less motion. */
-export function fadeMs(): number {
+/**
+ * The fade's length in milliseconds: the operator's setting, except none for
+ * someone who asked their system for less motion.
+ */
+export function fadeMs(configured: number): number {
   try {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches
       ? 0
-      : FADE_MS;
+      : configured;
   } catch {
-    return FADE_MS;
+    return configured;
   }
 }
 

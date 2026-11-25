@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
 import {
+  clampFade,
   parseSettings,
   type BackgroundId,
   type LyricsAlign,
@@ -69,6 +70,10 @@ export function setFooterText(text: string): void {
 
 export function setLyricsAlign(align: LyricsAlign): void {
   slideSettings.update((s) => ({ ...s, lyricsAlign: align }));
+}
+
+export function setFadeMs(ms: number): void {
+  slideSettings.update((s) => ({ ...s, fadeMs: clampFade(ms) }));
 }
 
 export function setBibleTextSize(size: TextSize): void {

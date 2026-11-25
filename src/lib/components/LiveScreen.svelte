@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
   import { fadeMs, slideKey } from "$lib/fade";
+  import { slideSettings } from "$lib/stores/settings";
   import { board } from "$lib/stores/board";
   import {
     currentImage,
@@ -29,8 +30,8 @@
   {#key key}
     <div
       class="layer"
-      in:fade|global={{ duration: fadeMs() }}
-      out:fade|global={{ duration: fadeMs() }}
+      in:fade|global={{ duration: fadeMs($slideSettings.fadeMs) }}
+      out:fade|global={{ duration: fadeMs($slideSettings.fadeMs) }}
     >
       {#if $isBlackout}
         <!-- The same picture as the projector shows, with nothing on it. -->

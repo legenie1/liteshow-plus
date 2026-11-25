@@ -66,6 +66,10 @@ const en = {
   queueDown: "Move down",
   queueRemove: "Remove from queue",
   settingsBackgrounds: "Backgrounds",
+  settingsTransition: "Slide transition",
+  settingsTransitionDuration: "Duration (seconds)",
+  settingsTransitionHint:
+    "How long a verse, a lyric or a prayer takes to appear over the previous one. 0 = instant cut. Images and videos are not affected.",
   settingsFooter: "Footer line",
   settingsFooterText: "Footer text",
   settingsFooterHint: "Text between *stars* is shown small and yellow.",
@@ -261,6 +265,10 @@ const fr: Record<MessageKey, string> = {
   queueDown: "Descendre",
   queueRemove: "Retirer de la file",
   settingsBackgrounds: "Fonds",
+  settingsTransition: "Transition des diapos",
+  settingsTransitionDuration: "Durée (secondes)",
+  settingsTransitionHint:
+    "Le temps qu'un verset, des paroles ou une prière mettent à apparaître sur la précédente. 0 = coupure nette. Les images et les vidéos ne changent pas.",
   settingsFooter: "Devise du bas",
   settingsFooterText: "Texte de la devise",
   settingsFooterHint: "Le texte entre *étoiles* est petit et jaune.",

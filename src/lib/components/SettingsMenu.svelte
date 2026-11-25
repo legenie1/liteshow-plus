@@ -10,11 +10,13 @@
     setBackground,
     setBibleTextSize,
     setFooter,
+    setFadeMs,
     setFooterText,
     slideSettings,
   } from "$lib/stores/settings";
   import {
     BACKGROUNDS,
+    FADE_RANGE,
     KINDS,
     TEXT_SIZES,
     type BackgroundId,
@@ -171,6 +173,33 @@
                 </select>
               </label>
             {/each}
+          </section>
+
+          <section>
+            <span class="section-title">{$t("settingsTransition")}</span>
+            <label class="row">
+              <span>{$t("settingsTransitionDuration")}</span>
+              <!-- Committed on Enter or when leaving the field: a value being
+                   typed ("0.") must not be rewritten under the cursor. -->
+              <input
+                type="number"
+                class="fade-input"
+                min={FADE_RANGE.min / 1000}
+                max={FADE_RANGE.max / 1000}
+                step="1"
+                value={$slideSettings.fadeMs / 1000}
+                onchange={(event) => {
+                  const typed = event.currentTarget.valueAsNumber;
+                  if (Number.isFinite(typed))
+                    setFadeMs(Math.round(typed * 1000));
+                  // Show what was kept (clamped, rounded), also when it did not change.
+                  event.currentTarget.value = String(
+                    $slideSettings.fadeMs / 1000,
+                  );
+                }}
+              />
+            </label>
+            <span class="field-label">{$t("settingsTransitionHint")}</span>
           </section>
 
           <section>
@@ -550,7 +579,8 @@
     gap: 0.3rem;
   }
 
-  input[type="text"] {
+  input[type="text"],
+  input[type="number"] {
     height: 2rem;
     padding: 0 0.5rem;
     border: 1px solid var(--line);
@@ -561,7 +591,12 @@
     font-size: 0.875rem;
   }
 
-  input[type="text"]:focus-visible {
+  .fade-input {
+    width: 5rem;
+  }
+
+  input[type="text"]:focus-visible,
+  input[type="number"]:focus-visible {
     outline: 1px solid var(--accent-focus);
     outline-offset: -1px;
   }

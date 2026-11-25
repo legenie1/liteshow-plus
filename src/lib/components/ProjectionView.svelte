@@ -5,6 +5,7 @@
   import { emit, listen } from "@tauri-apps/api/event";
   import { fadeMs, slideKey } from "$lib/fade";
   import { board } from "$lib/stores/board";
+  import { slideSettings } from "$lib/stores/settings";
   import { t } from "$lib/i18n";
   import PrayerSlide from "$lib/components/PrayerSlide.svelte";
   import type { PrayerPoint, ProjectionState } from "$lib/types";
@@ -210,8 +211,8 @@
     {#key slideKey(prayer)}
       <div
         class="prayer-frame"
-        in:fade|global={{ duration: fadeMs() }}
-        out:fade|global={{ duration: fadeMs() }}
+        in:fade|global={{ duration: fadeMs($slideSettings.fadeMs) }}
+        out:fade|global={{ duration: fadeMs($slideSettings.fadeMs) }}
       >
         <PrayerSlide {prayer} />
       </div>

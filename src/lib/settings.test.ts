@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS, parseSettings, SETTINGS_VERSION } from "./settings";
+import {
+  clampFade,
+  DEFAULT_SETTINGS,
+  parseSettings,
+  SETTINGS_VERSION,
+} from "./settings";
 import { DEFAULT_FOOTER } from "./prayer";
 
 describe("parseSettings", () => {
@@ -64,5 +69,25 @@ describe("parseSettings", () => {
     expect(
       parseSettings(JSON.stringify({ lyricsAlign: "left" })).lyricsAlign,
     ).toBe("center");
+  });
+});
+
+describe("slide transition", () => {
+  it("defaults to 1 s", () => {
+    expect(parseSettings(null).fadeMs).toBe(1000);
+  });
+
+  it("reads a stored duration, 0 included", () => {
+    expect(parseSettings(JSON.stringify({ fadeMs: 300 })).fadeMs).toBe(300);
+    expect(parseSettings(JSON.stringify({ fadeMs: 0 })).fadeMs).toBe(0);
+  });
+
+  it("keeps the duration inside the range, on the steps", () => {
+    expect(clampFade(-1000)).toBe(0);
+    expect(clampFade(99000)).toBe(10000);
+    expect(clampFade(310)).toBe(300);
+    expect(clampFade(1650)).toBe(1700);
+    expect(clampFade("slow")).toBe(1000);
+    expect(clampFade(NaN)).toBe(1000);
   });
 });
