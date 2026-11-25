@@ -5,10 +5,14 @@
 
   interface Props {
     video: VideoFile;
+    /** On the projector. */
     selected: boolean;
+    /** In the preview, not necessarily projected. */
+    previewed: boolean;
     looping: boolean;
     muted: boolean;
     onselect: () => void;
+    onproject: () => void;
     ontoggleloop: () => void;
     ontogglemute: () => void;
   }
@@ -16,9 +20,11 @@
   const {
     video,
     selected,
+    previewed,
     looping,
     muted,
     onselect,
+    onproject,
     ontoggleloop,
     ontogglemute,
   }: Props = $props();
@@ -60,7 +66,9 @@
     bind:this={button}
     class="slide"
     class:selected
+    class:previewed
     onclick={then(onselect)}
+    ondblclick={then(onproject)}
   >
     <span class="thumb">
       {#if visible}
@@ -202,7 +210,12 @@
     outline: 2px solid var(--text);
   }
 
-  .slide.selected {
+  .slide.previewed .thumb {
+    outline: 2px solid var(--accent-focus);
+  }
+
+  .slide.selected,
+  .slide.previewed {
     color: var(--text);
   }
 

@@ -16,6 +16,7 @@
     {
       title: "shortcutsVideos",
       rows: [
+        ["Enter", "shortcutProjectVideo"],
         ["Space", "shortcutPlayPause"],
         ["Shift + ← / →", "shortcutSeek"],
         ["0 / Home", "shortcutRestart"],

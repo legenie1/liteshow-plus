@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { get } from "svelte/store";
   import { images } from "$lib/stores/images";
-  import { activeTab, videos } from "$lib/stores/videos";
+  import { activeTab, previewVideo, videos } from "$lib/stores/videos";
   import {
     currentImage,
     currentVideo,
@@ -26,8 +26,10 @@
     if (["prayer", "bible", "dictionary", "lyrics"].includes(get(activeTab)))
       return;
     if (get(activeTab) === "videos") {
-      const nextName = stepVideoName(get(videos), get(currentVideo), delta);
-      if (nextName) selectVideo(nextName);
+      // Arrows move the preview. Only Enter (or a double-click) projects.
+      const from = get(previewVideo) ?? get(currentVideo);
+      const nextName = stepVideoName(get(videos), from, delta);
+      if (nextName) previewVideo.set(nextName);
       return;
     }
     const from = get(resumeImage) ?? get(currentImage);
@@ -123,6 +125,13 @@
         event.preventDefault();
         if (get(activeTab) === "videos") toggleVideoMute();
         break;
+      case "Enter": {
+        const name = get(previewVideo);
+        if (get(activeTab) !== "videos" || !name) break;
+        event.preventDefault();
+        void selectVideo(name);
+        break;
+      }
       case "b":
       case "B":
         event.preventDefault();
