@@ -32,6 +32,7 @@
   } from "$lib/highlight";
   import type { QueueItem } from "$lib/queue";
   import { bibleQueue } from "$lib/stores/queue";
+  import { activeTab } from "$lib/stores/videos";
   import QueueList from "$lib/components/QueueList.svelte";
   import { language, t } from "$lib/i18n";
   import LiveScreen from "$lib/components/LiveScreen.svelte";
@@ -67,6 +68,11 @@
     input?.focus();
   });
 
+  // The tab stays mounted while hidden: coming back puts the cursor in the field.
+  $effect(() => {
+    if ($activeTab === "bible") void tick().then(() => input?.focus());
+  });
+
   const query = $derived($bibleQuery.trim());
   const reference = $derived(parseReference(query));
   const partial = $derived(parsePartial($bibleQuery));
@@ -94,10 +100,30 @@
   const selected = $derived(
     $bibleQueue.find((item) => item.id === selectedId) ?? null,
   );
+  // The query written on purpose when a queued slide is picked: that change must
+  // not count as typing, which would drop the very slide that was just picked.
+  let adoptedQuery: string | null = null;
   $effect(() => {
     void [$bibleQuery, $selectedTranslations, $bibleLayout];
+    if (adoptedQuery !== null && $bibleQuery === adoptedQuery) {
+      adoptedQuery = null;
+      return;
+    }
     selectedId = null;
   });
+
+  // Picking a queued slide also puts its reference in the field, so the book,
+  // chapter and verse lists show where it comes from.
+  function selectQueued(id: string) {
+    selectedId = id;
+    const item = $bibleQueue.find((queued) => queued.id === id);
+    // The heading holds one reference per language ("Genesis 1:16 · Genèse 1:16").
+    const heading = item?.passage.text.split(" · ")[0] ?? "";
+    if (!parseReference(heading)) return;
+    searching = false;
+    adoptedQuery = heading !== $bibleQuery ? heading : null;
+    bibleQuery.set(heading);
+  }
 
   const shown = $derived(selected ? selected.passage : passage);
   const hasMarks = $derived(hasHighlight(shown));
@@ -519,7 +545,7 @@
       items={$bibleQueue}
       {selectedId}
       {isLive}
-      onselect={(id) => (selectedId = id)}
+      onselect={selectQueued}
       onproject={(item) => selectPrayer(item.passage)}
       onmove={bibleQueue.move}
       onremove={bibleQueue.remove}

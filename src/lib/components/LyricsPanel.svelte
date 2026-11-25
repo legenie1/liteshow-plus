@@ -2,6 +2,7 @@
   import { onMount, tick } from "svelte";
   import { currentPrayer, selectPrayer } from "$lib/stores/projection";
   import { lyricsSection, lyricsSongId, userSongs } from "$lib/stores/songs";
+  import { activeTab } from "$lib/stores/videos";
   import { BUILT_IN_SONGS } from "$lib/hymns";
   import {
     libraryFailed,
@@ -261,6 +262,8 @@
 
   // Arrow keys move through the slides of the song, as they do through images.
   function onWindowKeydown(event: KeyboardEvent) {
+    // The panel stays mounted while another tab is open.
+    if ($activeTab !== "lyrics") return;
     const target = event.target as HTMLElement | null;
     if (draft || target?.closest("input, textarea, select")) return;
     if (event.ctrlKey || event.metaKey || event.altKey) return;

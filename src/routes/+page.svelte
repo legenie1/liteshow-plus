@@ -7,13 +7,21 @@
   import BibleSearch from "$lib/components/BibleSearch.svelte";
   import DictionarySearch from "$lib/components/DictionarySearch.svelte";
   import LyricsPanel from "$lib/components/LyricsPanel.svelte";
-  import { activeTab } from "$lib/stores/videos";
+  import { activeTab, type Tab } from "$lib/stores/videos";
   import ProjectionView from "$lib/components/ProjectionView.svelte";
   import KeyboardShortcuts from "$lib/components/KeyboardShortcuts.svelte";
   import ShortcutsHelp from "$lib/components/ShortcutsHelp.svelte";
   import MediaDrop from "$lib/components/MediaDrop.svelte";
 
   const isProjectionWindow = getCurrentWindow().label === "projection";
+
+  // A tab is built the first time it is opened, then only hidden: switching back
+  // is instant and keeps what was typed, selected or loaded, where rebuilding the
+  // whole layout on every switch made the window flash.
+  let opened = $state<Partial<Record<Tab, boolean>>>({});
+  $effect.pre(() => {
+    if (!opened[$activeTab]) opened[$activeTab] = true;
+  });
 </script>
 
 {#if isProjectionWindow}
@@ -21,18 +29,25 @@
 {:else}
   <main class="control">
     <ControlBar />
-    {#if $activeTab === "videos"}
-      <VideoList />
-    {:else if $activeTab === "prayer"}
-      <PrayerEditor />
-    {:else if $activeTab === "bible"}
-      <BibleSearch />
-    {:else if $activeTab === "dictionary"}
-      <DictionarySearch />
-    {:else if $activeTab === "lyrics"}
-      <LyricsPanel />
-    {:else}
-      <ThumbnailList />
+    {#if opened.slides || $activeTab === "slides"}
+      <div class="tab" hidden={$activeTab !== "slides"}><ThumbnailList /></div>
+    {/if}
+    {#if opened.videos}
+      <div class="tab" hidden={$activeTab !== "videos"}><VideoList /></div>
+    {/if}
+    {#if opened.prayer}
+      <div class="tab" hidden={$activeTab !== "prayer"}><PrayerEditor /></div>
+    {/if}
+    {#if opened.bible}
+      <div class="tab" hidden={$activeTab !== "bible"}><BibleSearch /></div>
+    {/if}
+    {#if opened.dictionary}
+      <div class="tab" hidden={$activeTab !== "dictionary"}>
+        <DictionarySearch />
+      </div>
+    {/if}
+    {#if opened.lyrics}
+      <div class="tab" hidden={$activeTab !== "lyrics"}><LyricsPanel /></div>
     {/if}
   </main>
   <KeyboardShortcuts />
@@ -67,6 +82,17 @@
   :global(body) {
     margin: 0;
     overflow: hidden;
+  }
+
+  .tab {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tab[hidden] {
+    display: none;
   }
 
   .control {

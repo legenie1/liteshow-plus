@@ -11,6 +11,7 @@
     videoProgress,
     videoSection,
   } from "$lib/stores/projection";
+  import { activeTab } from "$lib/stores/videos";
   import { formatTime, needsResync, type VideoProgress } from "$lib/video";
   import { t } from "$lib/i18n";
 
@@ -52,6 +53,11 @@
   // The mirror is never the source of truth.
   $effect(() => {
     if (!mirror || !progress) return;
+    // Hidden tab: no need to decode a copy nobody sees.
+    if ($activeTab !== "videos") {
+      mirror.pause();
+      return;
+    }
     const { time, paused } = progress;
     if (needsResync(mirror.currentTime, time, !paused)) {
       mirror.currentTime = time;

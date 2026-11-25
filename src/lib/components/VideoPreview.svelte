@@ -1,7 +1,7 @@
 <script lang="ts">
   import { convertFileSrc } from "@tauri-apps/api/core";
   import { currentVideo, selectVideo } from "$lib/stores/projection";
-  import { previewVideo } from "$lib/stores/videos";
+  import { activeTab, previewVideo } from "$lib/stores/videos";
   import { formatTime } from "$lib/video";
   import { t } from "$lib/i18n";
 
@@ -24,6 +24,11 @@
     time = 0;
     duration = 0;
     paused = true;
+  });
+
+  // The tab stays mounted while hidden: a video must not keep playing behind it.
+  $effect(() => {
+    if ($activeTab !== "videos") el?.pause();
   });
 
   function sync() {
